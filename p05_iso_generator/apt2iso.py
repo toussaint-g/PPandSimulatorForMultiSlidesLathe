@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import annotations
+from dataclasses import dataclass
 from typing import Callable, Optional
 from functools import partial
 import re
 from p02_machines_config.machine_parameters import JsonDict, MachineParameters
 from p02_machines_config.machine_enums import FeedrateUnit, MotionMode, SpindleDirection, SpindleUnit, ToolComp, ToolType
-from p05_iso_generator.geometric_calculations import build_point_from_plane as geometry_build_point_from_plane, ccw_tangent_vector as geometry_ccw_tangent_vector, cw_tangent_vector as geometry_cw_tangent_vector, line_circle_intersections_2d as geometry_line_circle_intersections_2d, project_point_to_plane as geometry_project_point_to_plane
+from p05_iso_generator.geometric_calculations import line_circle_intersections_2d as geometry_line_circle_intersections_2d
 from p05_iso_generator.machine_state import EmissionState, WriterState
 
 
@@ -232,6 +233,223 @@ def csv_tokens(argument_text: str) -> list[str]:
 Handler = Callable[[str, str, WriterState, IsoWriter], None]
 
 
+@dataclass
+class TlonArcDefinition:
+    """Definition normalisee d'un raccord TLON base sur une geometrie CATIA."""
+
+    geometry_kind: str
+    start_x: float
+    start_y: float
+    start_z: float
+    tangent_x: float
+    tangent_y: float
+    tangent_z: float
+    center_x: float
+    center_y: float
+    center_z: float
+    radius: float
+    end_x: float
+    end_y: float
+    end_z: float
+    raw_argument_text: str
+    axis_u: float | None = None
+    axis_v: float | None = None
+    axis_w: float | None = None
+
+
+@dataclass
+class TlonArcSolution:
+    """Resultat geometrique d'un TLON pret a etre emis en ISO."""
+
+    work_plane_code: str
+    motion_code: str
+    center_x: float
+    center_y: float
+    center_z: float
+    end_x: float
+    end_y: float
+    end_z: float
+
+
+def emit_tlon_not_supported(argument_text: str, iso_writer: IsoWriter, reason: str | None = None) -> None:
+    """Centralise les messages de non-support pour TLON."""
+    if reason:
+        iso_writer.comment(f"NON GERE: TLON/{argument_text} ({reason})")
+        return
+    iso_writer.comment(f"NON GERE: TLON/{argument_text}")
+
+
+def parse_tlon_circle_definition(argument_text: str, state: WriterState) -> TlonArcDefinition | None:
+    """Parse la variante CATIA TLON basee sur CIRCLE et retourne une definition normalisee."""
+    geometry_match = re.search(r"\(CIRCLE/\s*([^)]+?)\s*\),\s*ON,\s*\(LINE/\s*([^)]+?)\s*\)", argument_text, re.IGNORECASE)
+    if not geometry_match:
+        return None
+
+    circle_definition_values = csv_floats(geometry_match.group(1))
+    line_definition_values = csv_floats(geometry_match.group(2))
+    if len(circle_definition_values) != 4 or len(line_definition_values) != 6:
+        return None
+
+    center_x, center_y, center_z, radius = circle_definition_values
+    _, _, _, end_x, end_y, end_z = line_definition_values
+
+    return TlonArcDefinition(
+        geometry_kind="CIRCLE",
+        start_x=state.position_x,
+        start_y=state.position_y,
+        start_z=state.position_z,
+        tangent_x=state.indirv_x if state.indirv_x is not None else 0.0,
+        tangent_y=state.indirv_y if state.indirv_y is not None else 0.0,
+        tangent_z=state.indirv_z if state.indirv_z is not None else 0.0,
+        center_x=center_x,
+        center_y=center_y,
+        center_z=center_z,
+        radius=radius,
+        end_x=end_x,
+        end_y=end_y,
+        end_z=end_z,
+        raw_argument_text=argument_text,
+    )
+
+
+def parse_tlon_cylndr_definition(argument_text: str, state: WriterState) -> TlonArcDefinition | None:
+    """Parse la variante CATIA TLON basee sur CYLNDR et retourne une definition normalisee."""
+    geometry_match = re.search(r"\(CYLNDR/\s*([^)]+?)\s*\)", argument_text, re.IGNORECASE)
+    if not geometry_match:
+        return None
+
+    cylinder_definition_values = csv_floats(geometry_match.group(1))
+    if len(cylinder_definition_values) != 7:
+        return None
+
+    point_matches = re.findall(r"\(POINT/\s*([^)]+?)\s*\)", argument_text, re.IGNORECASE)
+    if not point_matches:
+        return None
+
+    end_point_values = csv_floats(point_matches[-1])
+    if len(end_point_values) != 3:
+        return None
+
+    center_x, center_y, center_z, axis_u, axis_v, axis_w, radius = cylinder_definition_values
+    end_x, end_y, end_z = end_point_values
+
+    return TlonArcDefinition(
+        geometry_kind="CYLNDR",
+        start_x=state.position_x,
+        start_y=state.position_y,
+        start_z=state.position_z,
+        tangent_x=state.indirv_x if state.indirv_x is not None else 0.0,
+        tangent_y=state.indirv_y if state.indirv_y is not None else 0.0,
+        tangent_z=state.indirv_z if state.indirv_z is not None else 0.0,
+        center_x=center_x,
+        center_y=center_y,
+        center_z=center_z,
+        radius=radius,
+        end_x=end_x,
+        end_y=end_y,
+        end_z=end_z,
+        axis_u=axis_u,
+        axis_v=axis_v,
+        axis_w=axis_w,
+        raw_argument_text=argument_text,
+    )
+
+
+def parse_tlon_definition(argument_text: str, state: WriterState) -> TlonArcDefinition | None:
+    """Retourne la definition TLON normalisee correspondant a la geometrie detectee."""
+    tlon_definition = parse_tlon_circle_definition(argument_text, state)
+    if tlon_definition is not None:
+        return tlon_definition
+    return parse_tlon_cylndr_definition(argument_text, state)
+
+
+def solve_tlon_circle_xy(definition: TlonArcDefinition, state: WriterState, iso_writer: IsoWriter) -> TlonArcSolution | None:
+    """Resout geometriquement un TLON/CIRCLE limite au plan XY/G17."""
+    if state.tool_number == 0:
+        emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "outil courant absent")
+        return None
+
+    work_plane, work_plane_code = iso_writer.machine.get_tool_geometry_work_plane(state.tool_number)
+    if work_plane != "XY":
+        emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "CIRCLE CATIA limite au plan XY/G17")
+        return None
+
+    tolerance = float(iso_writer.machine.calculation_tolerance)
+    if abs(definition.start_z - definition.center_z) > tolerance or abs(definition.center_z - definition.end_z) > tolerance:
+        emit_tlon_not_supported(definition.raw_argument_text, iso_writer, f"geometrie hors plan outil {work_plane_code}")
+        return None
+
+    radial_x = definition.start_x - definition.center_x
+    radial_y = definition.start_y - definition.center_y
+    cw_tangent_x = radial_y
+    cw_tangent_y = -radial_x
+    ccw_tangent_x = -radial_y
+    ccw_tangent_y = radial_x
+    cw_alignment = cw_tangent_x * definition.tangent_x + cw_tangent_y * definition.tangent_y
+    ccw_alignment = ccw_tangent_x * definition.tangent_x + ccw_tangent_y * definition.tangent_y
+    motion_code = iso_writer.machine.circular_move_CW_code if cw_alignment >= ccw_alignment else iso_writer.machine.circular_move_CCW_code
+
+    intersections = geometry_line_circle_intersections_2d(
+        definition.center_x, definition.center_y,
+        definition.end_x, definition.end_y,
+        definition.center_x, definition.center_y,
+        definition.radius,
+    )
+    if not intersections:
+        return None
+
+    forward_intersections = [intersection for intersection in intersections if intersection[0] >= -tolerance]
+    if forward_intersections:
+        selected_intersection = min(forward_intersections, key=lambda intersection: intersection[0])
+    else:
+        selected_intersection = min(intersections, key=lambda intersection: abs(intersection[0]))
+
+    _, end_x, end_y = selected_intersection
+    return TlonArcSolution(
+        work_plane_code=work_plane_code,
+        motion_code=motion_code,
+        center_x=definition.center_x,
+        center_y=definition.center_y,
+        center_z=definition.center_z,
+        end_x=end_x,
+        end_y=end_y,
+        end_z=definition.center_z,
+    )
+
+
+def solve_tlon_cylndr_definition(definition: TlonArcDefinition, state: WriterState, iso_writer: IsoWriter) -> TlonArcSolution | None:
+    """Point d'entree reserve au futur solveur CYLNDR."""
+    emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "TLON/CYLNDR a implementer")
+    return None
+
+
+def solve_tlon_definition(definition: TlonArcDefinition, state: WriterState, iso_writer: IsoWriter) -> TlonArcSolution | None:
+    """Dispatche la resolution TLON selon la geometrie normalisee."""
+    if definition.geometry_kind == "CIRCLE":
+        return solve_tlon_circle_xy(definition, state, iso_writer)
+    return solve_tlon_cylndr_definition(definition, state, iso_writer)
+
+
+def emit_tlon_arc(solution: TlonArcSolution, state: WriterState, iso_writer: IsoWriter) -> None:
+    """Emet un mouvement circulaire ISO a partir d'une solution TLON."""
+    state.position_x = solution.end_x
+    state.position_y = solution.end_y
+    state.position_z = solution.end_z
+    state.motion_mode = MotionMode.WORKING
+
+    iso_writer.circular_move(
+        solution.work_plane_code,
+        solution.motion_code,
+        state.feedrate_value,
+        state.feedrate_unit,
+        solution.center_x,
+        solution.center_y,
+        solution.center_z,
+        position_x=solution.end_x,
+        position_y=solution.end_y,
+    )
+
+
 def h_comment(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter, text_info: str | None = None) -> None:
     """Gere les commandes de type commentaire en les ecrivant telles quelles dans un commentaire ISO."""
     iso_writer.comment(f"{text_info}: {argument_text.upper()}" if text_info else argument_text.upper())
@@ -373,125 +591,46 @@ def h_cutcom(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     state.toolComp_mode = cutcom_mode
 
 def h_indirv(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
-    """Memorise le vecteur tangent utilise par TLON pour choisir le sens de l'arc."""
-    coordinates = csv_floats(argument_text)
-    state.indirv_x = coordinates[0]
-    state.indirv_y = coordinates[1]
-    state.indirv_z = coordinates[2]
+    """Memorise INDIRV/X,Y,Z, soit la tangente du cercle au point de depart."""
+    tangent_values = csv_floats(argument_text)
+    state.indirv_x = tangent_values[0]
+    state.indirv_y = tangent_values[1]
+    state.indirv_z = tangent_values[2]
 
 def h_tlon(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
-    """Convertit un TLON CIRCLE/ON/LINE en interpolation circulaire ISO."""
-    # TLON decrit ici un raccord entre le cercle courant et une ligne support.
-    # L'idee est de projeter toute la geometrie dans le plan outil, calculer le
-    # point d'intersection utile en 2D, puis reconstruire le point final 3D.
-    geometry_match = re.search(r"\(CIRCLE/\s*([^)]+?)\s*\),\s*ON,\s*\(LINE/\s*([^)]+?)\s*\)", argument_text, re.IGNORECASE)
-    if not geometry_match:
-        iso_writer.comment(f"NON GERE: TLON/{argument_text}")
+    """Convertit un TLON CATIA en interpolation circulaire ISO."""
+    # Definition CATIA V5 prise en charge ici :
+    # AUTOPS -
+    # INDIRV/ X, Y, Z
+    # TLON,GOFWD/ (CIRCLE/ Xc, Yc, Zc,$
+    # Rad),ON,(LINE/ Xc, Yc, Zc, Xe, Ye, Ze)
+    # TLON,GOFWD/ (CIRCLE/ Xc, Yc, Zc,$
+    # Rad),ON,2,INTOF,$
+    # (LINE/ Xc, Yc, Zc, Xe, Ye, Ze)
+    #
+    # X, Y, Z   = composantes de la tangente du cercle au point de depart
+    # Xc, Yc, Zc = coordonnees du centre du cercle
+    # Rad        = rayon du cercle
+    # Xe, Ye, Ze = coordonnees du point final du cercle
+    #
+    # Dans les APT CATIA V5 traites ici, CIRCLE n'est utilise que pour des
+    # deplacements circulaires dans le plan XY (G17).
+    #
+    # La variante ON,2,INTOF est documentee ici pour conserver la definition
+    # CATIA, mais elle n'est pas exploitee par l'implementation actuelle.
+    #
+    # L'orchestration TLON est volontairement separee en parsing, resolution
+    # geometrique et emission ISO pour pouvoir ajouter CYLNDR sans alourdir ce handler.
+    tlon_definition = parse_tlon_definition(argument_text, state)
+    if tlon_definition is None:
+        emit_tlon_not_supported(argument_text, iso_writer)
         return
 
-    circle_values = csv_floats(geometry_match.group(1))
-    line_values = csv_floats(geometry_match.group(2))
-    if len(circle_values) != 4 or len(line_values) != 6:
-        iso_writer.comment(f"NON GERE: TLON/{argument_text}")
+    tlon_solution = solve_tlon_definition(tlon_definition, state, iso_writer)
+    if tlon_solution is None:
         return
 
-    start_x = state.position_x
-    start_y = state.position_y
-    start_z = state.position_z
-    center_x, center_y, center_z, radius = circle_values
-    line_start_x, line_start_y, line_start_z, line_end_x, line_end_y, line_end_z = line_values
-    tolerance = float(iso_writer.machine.calculation_tolerance)
-
-    if state.tool_number == 0:
-        iso_writer.comment(f"NON GERE: TLON/{argument_text}")
-        return
-
-    # Le plan de travail n'est plus deduit uniquement de la geometrie :
-    # on s'aligne sur le workplane declare sur l'outil dans la config machine.
-    work_plane, work_plane_code = iso_writer.machine.get_tool_geometry_work_plane(state.tool_number)
-    if work_plane == "XY":
-        constant_value = center_z
-        indirv_u = state.indirv_x if state.indirv_x is not None else 0.0
-        indirv_v = state.indirv_y if state.indirv_y is not None else 0.0
-        if abs(start_z - center_z) > tolerance or abs(line_start_z - line_end_z) > tolerance:
-            iso_writer.comment(f"NON GERE: TLON/{argument_text} (geometrie hors plan outil {work_plane_code})")
-            return
-    elif work_plane == "XZ":
-        constant_value = center_y
-        indirv_u = state.indirv_x if state.indirv_x is not None else 0.0
-        indirv_v = state.indirv_z if state.indirv_z is not None else 0.0
-        if abs(start_y - center_y) > tolerance or abs(line_start_y - line_end_y) > tolerance:
-            iso_writer.comment(f"NON GERE: TLON/{argument_text} (geometrie hors plan outil {work_plane_code})")
-            return
-    else:
-        constant_value = center_x
-        indirv_u = state.indirv_y if state.indirv_y is not None else 0.0
-        indirv_v = state.indirv_z if state.indirv_z is not None else 0.0
-        if abs(start_x - center_x) > tolerance or abs(line_start_x - line_end_x) > tolerance:
-            iso_writer.comment(f"NON GERE: TLON/{argument_text} (geometrie hors plan outil {work_plane_code})")
-            return
-
-    # Toutes les decisions geometriques sont prises dans le repere local (u, v)
-    # du plan de travail : centre du cercle, ligne support et point de depart.
-    start_u, start_v = geometry_project_point_to_plane(work_plane, start_x, start_y, start_z)
-    center_u, center_v = geometry_project_point_to_plane(work_plane, center_x, center_y, center_z)
-    line_start_u, line_start_v = geometry_project_point_to_plane(work_plane, line_start_x, line_start_y, line_start_z)
-    line_end_u, line_end_v = geometry_project_point_to_plane(work_plane, line_end_x, line_end_y, line_end_z)
-    radial_u = start_u - center_u
-    radial_v = start_v - center_v
-
-    # INDIRV fournit la direction tangente souhaitee au depart. On compare cette
-    # direction avec les tangentes CW/CCW possibles pour choisir entre G2 et G3.
-    cw_tangent_u, cw_tangent_v = geometry_cw_tangent_vector(work_plane, radial_u, radial_v)
-    ccw_tangent_u, ccw_tangent_v = geometry_ccw_tangent_vector(work_plane, radial_u, radial_v)
-    cw_alignment = cw_tangent_u * indirv_u + cw_tangent_v * indirv_v
-    ccw_alignment = ccw_tangent_u * indirv_u + ccw_tangent_v * indirv_v
-
-    if cw_alignment >= ccw_alignment:
-        motion_code = iso_writer.machine.circular_move_CW_code
-    else:
-        motion_code = iso_writer.machine.circular_move_CCW_code
-
-    intersections = geometry_line_circle_intersections_2d(
-        line_start_u, line_start_v,
-        line_end_u, line_end_v,
-        center_u, center_v,
-        radius,
-    )
-    if not intersections:
-        iso_writer.comment(f"NON GERE: TLON/{argument_text}")
-        return
-
-    # L'intersection retenue doit idealement etre "devant" le debut de la ligne
-    # (t >= 0). Si ce n'est pas le cas, on prend quand meme la solution la plus proche
-    # pour garder un comportement deterministe.
-    forward_intersections = [intersection for intersection in intersections if intersection[0] >= -tolerance]
-    if forward_intersections:
-        selected_intersection = min(forward_intersections, key=lambda intersection: intersection[0])
-    else:
-        selected_intersection = min(intersections, key=lambda intersection: abs(intersection[0]))
-
-    _, end_u, end_v = selected_intersection
-    # Le point final calcule en 2D est retransforme en XYZ avant emission ISO.
-    end_x, end_y, end_z = geometry_build_point_from_plane(work_plane, end_u, end_v, constant_value)
-
-    state.position_x = end_x
-    state.position_y = end_y
-    state.position_z = end_z
-    state.motion_mode = MotionMode.WORKING
-
-    iso_writer.circular_move(
-        work_plane_code,
-        motion_code,
-        state.feedrate_value,
-        state.feedrate_unit,
-        center_x,
-        center_y,
-        center_z,
-        position_x=end_x,
-        position_y=end_y if work_plane != "XZ" else None,
-        position_z=end_z if work_plane != "XY" else None,
-    )
+    emit_tlon_arc(tlon_solution, state, iso_writer)
 
 
 

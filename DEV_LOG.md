@@ -3,8 +3,9 @@
 ## Auteur:
 **Toussaint Guillaume**
 
+## Le 02/04/2026
 
-## Partie PP - Le 01/04/2026:
+## Partie PP:
 
 ### Points traites:
 - CIRCLE -> OK.
@@ -17,14 +18,15 @@
 
 ### Points a verifier (dans app):
 - Les arret de broche: rotation permanente en tournage et arret a chaque outil en fraisage. Voir aussi lors du chargement du 1er outil (-> pas de M5 avant l'appel du 1er outil dans le prog).
-- Faire une vérification du hometoolx: l'impression que l'on fait du ping-pong avec /2 ou *2...
+- Faire une vérification de coherence des home_tool_x. Pas mal de modifications faites et pas les datas pour faire toutes les vérification appropriees (commit **x_diameter update**).
+
 
 ### Points a verifier (dans CATIA):
 
 ### Ameliorations a prevoir:
 
 
-## Partie analyse - Le 01/04/2026:
+## Partie analyse:
 
 ### Points traites:
 
@@ -37,7 +39,7 @@
 ### Ameliorations a prevoir:
 
 
-## Partie viewer - Le 01/04/2026:
+## Partie viewer:
 
 ### Points traites:
 

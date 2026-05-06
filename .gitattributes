@@ -1,0 +1,14 @@
+* text=auto
+
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+*.nc text eol=lf
+*.NC text eol=lf
+*.aptsource text eol=lf
+*.stl text eol=lf
+
+.gitignore text eol=lf
+LICENSE text eol=lf
+requirements.txt text eol=lf
