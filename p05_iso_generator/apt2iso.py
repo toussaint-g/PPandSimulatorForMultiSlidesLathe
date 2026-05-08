@@ -7,7 +7,7 @@ from functools import partial
 import re
 from p02_machines_config.machine_parameters import JsonDict, MachineParameters
 from p02_machines_config.machine_enums import FeedrateUnit, MotionMode, SpindleDirection, SpindleUnit, ToolComp, ToolType
-from p05_iso_generator.geometric_calculations import line_circle_intersections_2d as geometry_line_circle_intersections_2d
+from p05_iso_generator.geometric_calculations import build_point_from_plane as geometry_build_point_from_plane, ccw_tangent_vector as geometry_ccw_tangent_vector, cw_tangent_vector as geometry_cw_tangent_vector, line_circle_intersections_2d as geometry_line_circle_intersections_2d, project_point_to_plane as geometry_project_point_to_plane
 from p05_iso_generator.machine_state import EmissionState, WriterState
 
 
@@ -261,6 +261,7 @@ class TlonArcDefinition:
 class TlonArcSolution:
     """Resultat geometrique d'un TLON pret a etre emis en ISO."""
 
+    work_plane_name: str
     work_plane_code: str
     motion_code: str
     center_x: float
@@ -363,6 +364,84 @@ def parse_tlon_definition(argument_text: str, state: WriterState) -> TlonArcDefi
     return parse_tlon_cylndr_definition(argument_text, state)
 
 
+def _get_work_plane_projection_data(definition: TlonArcDefinition, work_plane: str, work_plane_code: str, iso_writer: IsoWriter) -> tuple[float, float, float, float, float, float, float, float, float] | None:
+    """Retourne les donnees 2D utiles au calcul d'arc dans le plan machine demande."""
+    tolerance = float(iso_writer.machine.calculation_tolerance)
+
+    if work_plane == "XY":
+        constant_value = definition.center_z
+        tangent_u = definition.tangent_x
+        tangent_v = definition.tangent_y
+        if abs(definition.start_z - definition.center_z) > tolerance or abs(definition.center_z - definition.end_z) > tolerance:
+            emit_tlon_not_supported(definition.raw_argument_text, iso_writer, f"geometrie hors plan outil {work_plane_code}")
+            return None
+    elif work_plane == "XZ":
+        constant_value = definition.center_y
+        tangent_u = definition.tangent_x
+        tangent_v = definition.tangent_z
+        if abs(definition.start_y - definition.center_y) > tolerance or abs(definition.center_y - definition.end_y) > tolerance:
+            emit_tlon_not_supported(definition.raw_argument_text, iso_writer, f"geometrie hors plan outil {work_plane_code}")
+            return None
+    else:
+        constant_value = definition.center_x
+        tangent_u = definition.tangent_y
+        tangent_v = definition.tangent_z
+        if abs(definition.start_x - definition.center_x) > tolerance or abs(definition.center_x - definition.end_x) > tolerance:
+            emit_tlon_not_supported(definition.raw_argument_text, iso_writer, f"geometrie hors plan outil {work_plane_code}")
+            return None
+
+    start_u, start_v = geometry_project_point_to_plane(work_plane, definition.start_x, definition.start_y, definition.start_z)
+    center_u, center_v = geometry_project_point_to_plane(work_plane, definition.center_x, definition.center_y, definition.center_z)
+    end_u, end_v = geometry_project_point_to_plane(work_plane, definition.end_x, definition.end_y, definition.end_z)
+    return constant_value, tangent_u, tangent_v, start_u, start_v, center_u, center_v, end_u, end_v
+
+
+def _solve_tlon_arc_in_machine_plane(definition: TlonArcDefinition, work_plane: str, work_plane_code: str, iso_writer: IsoWriter) -> TlonArcSolution | None:
+    """Resout un TLON dans un plan machine principal deja valide."""
+    projection_data = _get_work_plane_projection_data(definition, work_plane, work_plane_code, iso_writer)
+    if projection_data is None:
+        return None
+
+    constant_value, tangent_u, tangent_v, start_u, start_v, center_u, center_v, end_u, end_v = projection_data
+    radial_u = start_u - center_u
+    radial_v = start_v - center_v
+    cw_tangent_u, cw_tangent_v = geometry_cw_tangent_vector(work_plane, radial_u, radial_v)
+    ccw_tangent_u, ccw_tangent_v = geometry_ccw_tangent_vector(work_plane, radial_u, radial_v)
+    cw_alignment = cw_tangent_u * tangent_u + cw_tangent_v * tangent_v
+    ccw_alignment = ccw_tangent_u * tangent_u + ccw_tangent_v * tangent_v
+    motion_code = iso_writer.machine.circular_move_CW_code if cw_alignment >= ccw_alignment else iso_writer.machine.circular_move_CCW_code
+
+    intersections = geometry_line_circle_intersections_2d(
+        center_u, center_v,
+        end_u, end_v,
+        center_u, center_v,
+        definition.radius,
+    )
+    if not intersections:
+        return None
+
+    tolerance = float(iso_writer.machine.calculation_tolerance)
+    forward_intersections = [intersection for intersection in intersections if intersection[0] >= -tolerance]
+    if forward_intersections:
+        selected_intersection = min(forward_intersections, key=lambda intersection: intersection[0])
+    else:
+        selected_intersection = min(intersections, key=lambda intersection: abs(intersection[0]))
+
+    _, solved_end_u, solved_end_v = selected_intersection
+    solved_end_x, solved_end_y, solved_end_z = geometry_build_point_from_plane(work_plane, solved_end_u, solved_end_v, constant_value)
+    return TlonArcSolution(
+        work_plane_name=work_plane,
+        work_plane_code=work_plane_code,
+        motion_code=motion_code,
+        center_x=definition.center_x,
+        center_y=definition.center_y,
+        center_z=definition.center_z,
+        end_x=solved_end_x,
+        end_y=solved_end_y,
+        end_z=solved_end_z,
+    )
+
+
 def solve_tlon_circle_xy(definition: TlonArcDefinition, state: WriterState, iso_writer: IsoWriter) -> TlonArcSolution | None:
     """Resout geometriquement un TLON/CIRCLE limite au plan XY/G17."""
     if state.tool_number == 0:
@@ -374,53 +453,47 @@ def solve_tlon_circle_xy(definition: TlonArcDefinition, state: WriterState, iso_
         emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "CIRCLE CATIA limite au plan XY/G17")
         return None
 
-    tolerance = float(iso_writer.machine.calculation_tolerance)
-    if abs(definition.start_z - definition.center_z) > tolerance or abs(definition.center_z - definition.end_z) > tolerance:
-        emit_tlon_not_supported(definition.raw_argument_text, iso_writer, f"geometrie hors plan outil {work_plane_code}")
-        return None
-
-    radial_x = definition.start_x - definition.center_x
-    radial_y = definition.start_y - definition.center_y
-    cw_tangent_x = radial_y
-    cw_tangent_y = -radial_x
-    ccw_tangent_x = -radial_y
-    ccw_tangent_y = radial_x
-    cw_alignment = cw_tangent_x * definition.tangent_x + cw_tangent_y * definition.tangent_y
-    ccw_alignment = ccw_tangent_x * definition.tangent_x + ccw_tangent_y * definition.tangent_y
-    motion_code = iso_writer.machine.circular_move_CW_code if cw_alignment >= ccw_alignment else iso_writer.machine.circular_move_CCW_code
-
-    intersections = geometry_line_circle_intersections_2d(
-        definition.center_x, definition.center_y,
-        definition.end_x, definition.end_y,
-        definition.center_x, definition.center_y,
-        definition.radius,
-    )
-    if not intersections:
-        return None
-
-    forward_intersections = [intersection for intersection in intersections if intersection[0] >= -tolerance]
-    if forward_intersections:
-        selected_intersection = min(forward_intersections, key=lambda intersection: intersection[0])
-    else:
-        selected_intersection = min(intersections, key=lambda intersection: abs(intersection[0]))
-
-    _, end_x, end_y = selected_intersection
-    return TlonArcSolution(
-        work_plane_code=work_plane_code,
-        motion_code=motion_code,
-        center_x=definition.center_x,
-        center_y=definition.center_y,
-        center_z=definition.center_z,
-        end_x=end_x,
-        end_y=end_y,
-        end_z=definition.center_z,
-    )
+    return _solve_tlon_arc_in_machine_plane(definition, work_plane, work_plane_code, iso_writer)
 
 
 def solve_tlon_cylndr_definition(definition: TlonArcDefinition, state: WriterState, iso_writer: IsoWriter) -> TlonArcSolution | None:
-    """Point d'entree reserve au futur solveur CYLNDR."""
-    emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "TLON/CYLNDR a implementer")
-    return None
+    """Resout un TLON/CYLNDR si l'axe du cylindre coincide avec un plan machine."""
+    if state.tool_number == 0:
+        emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "outil courant absent")
+        return None
+    if definition.axis_u is None or definition.axis_v is None or definition.axis_w is None:
+        emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "axe CYLNDR absent")
+        return None
+
+    work_plane, work_plane_code = iso_writer.machine.get_tool_geometry_work_plane(state.tool_number)
+    tolerance = float(iso_writer.machine.calculation_tolerance)
+    tool_config = iso_writer.machine.get_required_tool_config(state.tool_number)
+    tool_axis_vector = tool_config.get("workplane")
+    if not isinstance(tool_axis_vector, (list, tuple)) or len(tool_axis_vector) != 3:
+        emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "axe outil JSON invalide")
+        return None
+
+    axis_u = abs(definition.axis_u)
+    axis_v = abs(definition.axis_v)
+    axis_w = abs(definition.axis_w)
+    tool_axis_u = abs(float(tool_axis_vector[0]))
+    tool_axis_v = abs(float(tool_axis_vector[1]))
+    tool_axis_w = abs(float(tool_axis_vector[2]))
+
+    if abs(axis_u - tool_axis_u) > tolerance or abs(axis_v - tool_axis_v) > tolerance or abs(axis_w - tool_axis_w) > tolerance:
+        emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "axe CYLNDR different de l'axe outil")
+        return None
+
+    axis_matches_work_plane = (
+        (work_plane == "XY" and abs(axis_u) <= tolerance and abs(axis_v) <= tolerance and abs(axis_w - 1.0) <= tolerance)
+        or (work_plane == "XZ" and abs(axis_u) <= tolerance and abs(axis_v - 1.0) <= tolerance and abs(axis_w) <= tolerance)
+        or (work_plane == "YZ" and abs(axis_u - 1.0) <= tolerance and abs(axis_v) <= tolerance and abs(axis_w) <= tolerance)
+    )
+    if not axis_matches_work_plane:
+        emit_tlon_not_supported(definition.raw_argument_text, iso_writer, f"axe CYLNDR hors plan machine {work_plane_code}")
+        return None
+
+    return _solve_tlon_arc_in_machine_plane(definition, work_plane, work_plane_code, iso_writer)
 
 
 def solve_tlon_definition(definition: TlonArcDefinition, state: WriterState, iso_writer: IsoWriter) -> TlonArcSolution | None:
@@ -446,7 +519,8 @@ def emit_tlon_arc(solution: TlonArcSolution, state: WriterState, iso_writer: Iso
         solution.center_y,
         solution.center_z,
         position_x=solution.end_x,
-        position_y=solution.end_y,
+        position_y=solution.end_y if solution.work_plane_name != "XZ" else None,
+        position_z=solution.end_z if solution.work_plane_name != "XY" else None,
     )
 
 
