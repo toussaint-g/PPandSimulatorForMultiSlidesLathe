@@ -6,7 +6,7 @@
       "machineinformations": {
         "rapidfeedrate": 25000,
         "changetooltime": 1,
-        "xdiameter": true,
+        "xdiameter": false,
         "rapidmove": "G0",
 		    "linearmove": "G1",
 		    "circularmoveCW": "G2",

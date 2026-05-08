@@ -12,11 +12,13 @@
 ### Points traites:
 - CIRCLE -> OK.
 - CYLNDR -> OK.
+- Canal 1 uniquement testé !!
 
 ### Prochaines actions:
 - Gestion HELICAL a implementer.
 - Gestion des orientations d'outils pour la generations des rotations C.
 - Revoir la gestion des hometool (GOTO avant changement d'outil).
+- Gestion de tous les canaux.
 
 ### Points a verifier (dans app):
 - Les arret de broche: rotation permanente en tournage et arret a chaque outil en fraisage. Voir aussi lors du chargement du 1er outil (-> pas de M5 avant l'appel du 1er outil dans le prog).
@@ -48,6 +50,7 @@
 
 ### Prochaines actions:
 - Gerer les rotations et les sens du C en fraisage (avec ajout d'interpolations).
+- Ajouter une couleur (ex violet) pour les mouvements C.
 
 ### Points a verifier (dans app):
 

@@ -7,6 +7,7 @@ from typing import Callable
 
 from p02_machines_config.machine_enums import FeedrateUnit, MotionMode, SpindleDirection, SpindleUnit, ToolComp, ToolType
 from p05_iso_generator.apt_parser import csv_floats, csv_tokens
+from p05_iso_generator.helical import emit_helical_move, emit_helical_not_supported, parse_helical_definition, solve_helical_definition
 from p05_iso_generator.iso_writer import IsoWriter
 from p05_iso_generator.machine_state import WriterState
 from p05_iso_generator.tlon import emit_tlon_arc, emit_tlon_not_supported, parse_tlon_definition, solve_tlon_definition
@@ -178,6 +179,20 @@ def h_tlon(apt_keyword: str, argument_text: str, state: WriterState, iso_writer:
     emit_tlon_arc(tlon_solution, state, iso_writer)
 
 
+def h_helical(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
+    """Convertit un HELICAL CATIA en interpolation circulaire ISO avec axe hors plan."""
+    helical_definition = parse_helical_definition(argument_text)
+    if helical_definition is None:
+        emit_helical_not_supported(argument_text, iso_writer)
+        return
+
+    helical_solution = solve_helical_definition(helical_definition, state, iso_writer)
+    if helical_solution is None:
+        return
+
+    emit_helical_move(helical_solution, state, iso_writer)
+
+
 
 
 
@@ -209,6 +224,7 @@ DISPATCH: dict[str, Handler] = {
     "CUTCOM": h_cutcom,
     "INDIRV": h_indirv,
     "TLON": h_tlon,
+    "HELICAL": h_helical,
     "END": h_fini,
     # Meta-informations (commentees dans l'ISO)
     #"PARTNO": h_comment(text_info="PART NUMBER"), # TODO: Voir si utile...
