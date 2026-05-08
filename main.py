@@ -95,11 +95,12 @@ def apt_treatment(path_apt_file, path_export_file, machine_name, channel_name):
     path_export_file.mkdir(parents=True, exist_ok=True)
 
     in_path = Path(path_apt_file)
-    out_path = path_export_file / (in_path.stem + ".debug")
+    debug_path = path_export_file / (in_path.stem + ".debug")
+    nc_path = path_export_file / (in_path.stem + ".nc")
 
-    convert_file(str(in_path), str(out_path), machine_config, channel_name)
+    convert_file(str(in_path), str(debug_path), machine_config, channel_name, str(nc_path))
 
-    messagebox.showinfo("Conversion terminee", f"ISO genere :\n{out_path}")
+    messagebox.showinfo("Conversion terminee", f"ISO genere :\n{nc_path}\n\nDebug genere :\n{debug_path}")
 
 
 
