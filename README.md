@@ -53,6 +53,7 @@ Pour tester l'application, vous pouvez utilier les fichiers presents dans le rep
 
 ### tool_path_config.json:
 Pour le parametrage du rendu visuel des trajectoires outils. Plusieurs options de parametrage sont possible au niveau **viewer** et **toolpath**.
+#### Informations sur le parametrage:
 
 ### machines_config.json:
 Pour le parametrage des machines d'usinage. Un nombre d'options sont parametrables comme les **codes M et G**, les dispositions d'outils, etc...
@@ -65,4 +66,4 @@ Pour le parametrage des machines d'usinage. Un nombre d'options sont parametrabl
     - **tool_type: 0** -> outil de tournage.
 	- **tool_type: 1** -> outil de fraisage.
 	- **tool_type: 2** -> outil stopper (pour ravitaillement matiere).
-- **hometool X** est toujours traite au rayon et pas au diametre, et doit-etre place par rapport au partvector.
+- **hometool X** doit-etre renseigne au rayon et doit-etre place par rapport au partvector.

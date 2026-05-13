@@ -188,9 +188,9 @@ class MachineParameters:
             channels_list: JsonDict = machine_config["channelslist"]  # type: ignore[assignment]
             channel_config: JsonDict = channels_list[channel_name]  # type: ignore[index]
             home_tool_x, home_tool_y, home_tool_z = _extract_home_tool_coordinates(channel_config["hometool"])
-            x_diameter = machine_informations["xdiameter"]
-            if x_diameter:
-                home_tool_x = home_tool_x / 2
+            # x_diameter = machine_informations["xdiameter"]
+            # if x_diameter:
+            #     home_tool_x = home_tool_x / 2
 
             coolant_start_code = machine_informations.get("coolantstart")
             coolant_stop_code = machine_informations.get("coolantstop")
@@ -200,7 +200,7 @@ class MachineParameters:
                 calculation_tolerance=machine_config["calculationtolerance"],
                 rapidfeedrate=machine_informations["rapidfeedrate"],
                 change_tool_time=machine_informations["changetooltime"],
-                x_diameter=x_diameter,
+                x_diameter=machine_informations["xdiameter"],
                 rapid_move_code=normalize_gm_code(machine_informations["rapidmove"]),
                 linear_move_code=normalize_gm_code(machine_informations["linearmove"]),
                 circular_move_CW_code=normalize_gm_code(machine_informations["circularmoveCW"]),

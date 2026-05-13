@@ -182,11 +182,7 @@ class ToolPathInterpreter:
             # Si num outil de la ligne courante <> 0 et le courant = 0
             if current_line.tool_number != 0 and current_tool == 0:
                 
-
-
                 previous_point = [current_line.endpoint_x, current_line.endpoint_y, current_line.endpoint_z]
-
-
 
                 # Val outil courant
                 current_tool = current_line.tool_number
@@ -213,10 +209,7 @@ class ToolPathInterpreter:
                 current_polyline_c_values = []
                 current_move_group_type = None
 
-
                 previous_point = [current_line.endpoint_x, current_line.endpoint_y, current_line.endpoint_z]
-
-
 
                 # Val outil courant
                 current_tool = current_line.tool_number
