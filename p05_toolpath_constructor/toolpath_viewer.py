@@ -21,20 +21,7 @@ class ToolPathViewer:
         self.machine_config = machine_config
         self.channel_name = channel_name
         self.part_thickness = part_thickness
-        toolpath_parameters = ToolPathParameters.from_config(ToolPathConfigLoader.data)
-        self.viewer_background_color = toolpath_parameters.viewer_background_color
-        self.viewer_text_color = toolpath_parameters.viewer_text_color
-        self.viewer_text_size = toolpath_parameters.viewer_text_size
-        self.viewer_object_color = toolpath_parameters.viewer_object_color
-        self.viewer_origin_color = toolpath_parameters.viewer_origin_color
-        self.viewer_origin_diameter = toolpath_parameters.viewer_origin_diameter
-        self.viewer_compass_size = toolpath_parameters.viewer_compass_size
-        self.tool_path_width = toolpath_parameters.tool_path_width
-        self.tool_path_rapid_move_color = toolpath_parameters.tool_path_rapid_move_color
-        self.tool_path_work_move_color = toolpath_parameters.tool_path_work_move_color
-        self.tool_path_cursor_point_color = toolpath_parameters.tool_path_cursor_point_color
-        self.tool_path_cursor_point_size = toolpath_parameters.tool_path_cursor_point_size
-        self.tool_path_circle_resolution = toolpath_parameters.tool_path_circle_resolution
+        self.toolpath_parameters = ToolPathParameters.from_config(ToolPathConfigLoader.data)
 
 
     def open_viewer(self, path_file, list_datas):
@@ -56,7 +43,7 @@ class ToolPathViewer:
             mapper_stl = vtk.vtkPolyDataMapper()
             mapper_stl.SetInputConnection(reader.GetOutputPort())
             actor_stl.SetMapper(mapper_stl)
-            actor_stl.GetProperty().SetColor(colors.GetColor3d(self.viewer_object_color))
+            actor_stl.GetProperty().SetColor(colors.GetColor3d(self.toolpath_parameters.viewer_object_color))
             actor_stl.GetProperty().SetAmbient(0.2)
             actor_stl.GetProperty().SetDiffuse(0.7)
             actor_stl.GetProperty().SetSpecular(0.4)
@@ -64,7 +51,7 @@ class ToolPathViewer:
             actor_stl.GetProperty().SetOpacity(1)
 
         # Acteur pour sphere d'origine
-        radius = self.viewer_origin_diameter / 2
+        radius = self.toolpath_parameters.viewer_origin_diameter / 2
         sphere_origine = vtk.vtkSphereSource()
         sphere_origine.SetCenter(0.0, 0.0, 0.0)
         sphere_origine.SetRadius(radius)
@@ -75,7 +62,7 @@ class ToolPathViewer:
         mapper_origine.SetInputConnection(sphere_origine.GetOutputPort())
         actor_origine = vtk.vtkActor()
         actor_origine.SetMapper(mapper_origine)
-        actor_origine.GetProperty().SetColor(colors.GetColor3d(self.viewer_origin_color))
+        actor_origine.GetProperty().SetColor(colors.GetColor3d(self.toolpath_parameters.viewer_origin_color))
         actor_origine.GetProperty().SetSpecular(0.3) # Lumiere speculaire (point de brillance)
         actor_origine.GetProperty().SetSpecularPower(20) # Nettete de cette lumiere speculaire
 
@@ -91,13 +78,13 @@ class ToolPathViewer:
         mapper_cursor.SetInputData(point_cursor_polydata)
         actor_cursor = vtk.vtkActor()
         actor_cursor.SetMapper(mapper_cursor)
-        actor_cursor.GetProperty().SetColor(colors.GetColor3d(self.tool_path_cursor_point_color))
-        actor_cursor.GetProperty().SetPointSize(self.tool_path_cursor_point_size)
+        actor_cursor.GetProperty().SetColor(colors.GetColor3d(self.toolpath_parameters.tool_path_cursor_point_color))
+        actor_cursor.GetProperty().SetPointSize(self.toolpath_parameters.tool_path_cursor_point_size)
         actor_cursor.SetVisibility(False)
 
         # Moteurs de rendu piece
         renderer_pc = vtk.vtkRenderer()
-        renderer_pc.SetBackground(colors.GetColor3d(self.viewer_background_color))
+        renderer_pc.SetBackground(colors.GetColor3d(self.toolpath_parameters.viewer_background_color))
         renderer_pc.AddActor(actor_stl)
         renderer_pc.AddActor(actor_origine)
         renderer_pc.SetLayer(0)
@@ -108,8 +95,8 @@ class ToolPathViewer:
         text = vtk.vtkTextActor()
         text.SetInput(text_rendu + "toutes trajectoires affichees")
         textprop = text.GetTextProperty()
-        textprop.SetFontSize(self.viewer_text_size)
-        textprop.SetColor(colors.GetColor3d(self.viewer_text_color))
+        textprop.SetFontSize(self.toolpath_parameters.viewer_text_size)
+        textprop.SetColor(colors.GetColor3d(self.toolpath_parameters.viewer_text_color))
         text.SetPosition(10, 10)
         renderer_pc.AddActor2D(text)
 
@@ -120,13 +107,13 @@ class ToolPathViewer:
         obj_tool_path_interpeter = ToolPathInterpreter(self.machine_config, self.channel_name, self.part_thickness)
         actors_list = obj_tool_path_interpeter.analyze(
             list_datas,
-            self.tool_path_circle_resolution)
+            self.toolpath_parameters.tool_path_circle_resolution)
 
         lookup_table = vtk.vtkLookupTable()
         lookup_table.SetNumberOfTableValues(2)
         lookup_table.Build()
-        rapid_color = colors.GetColor3ub(self.tool_path_rapid_move_color)
-        work_color = colors.GetColor3ub(self.tool_path_work_move_color)
+        rapid_color = colors.GetColor3ub(self.toolpath_parameters.tool_path_rapid_move_color)
+        work_color = colors.GetColor3ub(self.toolpath_parameters.tool_path_work_move_color)
         lookup_table.SetTableValue(0, rapid_color.GetRed() / 255.0, rapid_color.GetGreen() / 255.0, rapid_color.GetBlue() / 255.0, 1.0)
         lookup_table.SetTableValue(1, work_color.GetRed() / 255.0, work_color.GetGreen() / 255.0, work_color.GetBlue() / 255.0, 1.0)
 
@@ -136,7 +123,7 @@ class ToolPathViewer:
             mapper_toolpath.SetLookupTable(lookup_table)
             mapper_toolpath.SetScalarRange(0, 1)
             mapper_toolpath.ScalarVisibilityOn()
-            actor_toolpath.GetProperty().SetLineWidth(self.tool_path_width)
+            actor_toolpath.GetProperty().SetLineWidth(self.toolpath_parameters.tool_path_width)
             renderer_toolpath.AddActor(actor_toolpath)
 
         renderer_toolpath.AddActor(actor_cursor)
@@ -378,7 +365,11 @@ class ToolPathViewer:
 
         # Boussole en bas a droite
         axes = vtk.vtkAxesActor()
-        axes.SetTotalLength(self.viewer_compass_size, self.viewer_compass_size, self.viewer_compass_size)  # Longueur des axes XYZ
+        axes.SetTotalLength(
+            self.toolpath_parameters.viewer_compass_size,
+            self.toolpath_parameters.viewer_compass_size,
+            self.toolpath_parameters.viewer_compass_size,
+        )  # Longueur des axes XYZ
         axes.AxisLabelsOn() # Affiche XYZ
         orientation_widget = vtk.vtkOrientationMarkerWidget()
         orientation_widget.SetOrientationMarker(axes)

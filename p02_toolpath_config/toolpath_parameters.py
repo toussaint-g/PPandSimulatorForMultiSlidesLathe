@@ -22,6 +22,7 @@ class ToolPathParameters:
     tool_path_width: float
     tool_path_rapid_move_color: str
     tool_path_work_move_color: str
+    tool_path_caxismove_color: str
     tool_path_cursor_point_color: str
     tool_path_cursor_point_size: int
     tool_path_circle_resolution: float
@@ -44,6 +45,7 @@ class ToolPathParameters:
                 tool_path_width=toolpath_viewer_config["pathwidth"],
                 tool_path_rapid_move_color=toolpath_viewer_config["rapidmovecolor"],
                 tool_path_work_move_color=toolpath_viewer_config["workmovecolor"],
+                tool_path_caxismove_color=toolpath_viewer_config["caxismovecolor"],
                 tool_path_cursor_point_color=toolpath_viewer_config["cursorpointcolor"],
                 tool_path_cursor_point_size=toolpath_viewer_config["cursorpointsize"],
                 tool_path_circle_resolution=toolpath_viewer_config["circleresolution"],

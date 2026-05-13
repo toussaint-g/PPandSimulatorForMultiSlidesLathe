@@ -40,3 +40,5 @@
 ### Points a verifier (dans CATIA):
 ### Ameliorations a prevoir:
 ### Choses a noter dans la doc finale:
+- Les cordonnees affichees sont toujours au rayon (a confirmer car pas sur).
+- 
