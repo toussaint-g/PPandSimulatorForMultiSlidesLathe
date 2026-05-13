@@ -46,10 +46,7 @@ class IsoInterpreter:
         lines = []
 
         obj_modal = Modal(machine_parameters=self.machine)
-        obj_mathematical_functions = MathematicalFunctions(
-            x_diameter=self.machine.x_diameter,
-            calculation_tolerance=self.machine.calculation_tolerance,
-        )
+        obj_mathematical_functions = MathematicalFunctions(self.machine.calculation_tolerance, self.machine.x_diameter)
         home_tool_x, home_tool_y, home_tool_z = self._get_home_tool_position()
 
         # Ouverture du fichier GCode
@@ -286,14 +283,11 @@ class MathematicalFunctions:
         # Distance entre start et end
         d = math.dist((start_point_x, start_point_y), (end_point_x, end_point_y))
 
-        diameter = 2 * radius
-        tolerance = abs(self.calculation_tolerance)
-        if d > diameter + tolerance:
+        if d > 2 * radius:
             raise ValueError("Le rayon est trop petit pour passer par les deux points !!")
 
         # Distance entre le milieu et le centre du cercle
-        h_squared = radius**2 - (d / 2) ** 2
-        h = math.sqrt(max(0.0, h_squared))
+        h = math.sqrt(radius**2 - (d / 2) ** 2)
 
         # Calcul du vecteur perpendiculaire au segment start-end
         dx = end_point_x - start_point_x

@@ -174,13 +174,19 @@ class ToolPathInterpreter:
                 current_tool)
 
         # Initialisation previous point
-        previous_point = [self.machine.home_tool_x, self.machine.home_tool_y, self.machine.home_tool_z]
+        #previous_point = [self.machine.home_tool_x, self.machine.home_tool_y, self.machine.home_tool_z]
 
         # Lecture datas
         for current_line in list_datas:
 
             # Si num outil de la ligne courante <> 0 et le courant = 0
             if current_line.tool_number != 0 and current_tool == 0:
+                
+
+
+                previous_point = [current_line.endpoint_x, current_line.endpoint_y, current_line.endpoint_z]
+
+
 
                 # Val outil courant
                 current_tool = current_line.tool_number
@@ -207,17 +213,24 @@ class ToolPathInterpreter:
                 current_polyline_c_values = []
                 current_move_group_type = None
 
+
+                previous_point = [current_line.endpoint_x, current_line.endpoint_y, current_line.endpoint_z]
+
+
+
                 # Val outil courant
                 current_tool = current_line.tool_number
 
                 # Initialisation du point hometool
-                previous_point = [self.machine.home_tool_x, self.machine.home_tool_y, self.machine.home_tool_z]
+                #previous_point = [self.machine.home_tool_x, self.machine.home_tool_y, self.machine.home_tool_z]
 
+            # Si ligne avec outil courant
             if current_line.tool_number != 0:
                 current_point = [current_line.endpoint_x, current_line.endpoint_y, current_line.endpoint_z, current_line.endpoint_c]
                 previous_c = float(previous_point[3]) if len(previous_point) > 3 else 0.0
                 current_c = float(current_point[3])
 
+                # Si changement d'angle C sans deplacement XYZ, on construit une trajectoire de rotation pure sur place pour visualiser la transition.
                 if current_c != previous_c and current_line.distance == 0.0 and current_line.distance_in_material == 0.0:
                     path_points, path_c_values = build_c_axis_rotation_path(previous_point, current_point, previous_c, current_c)
                     if current_line.move_type == MoveType.LINEAR_MOVE:
@@ -264,6 +277,7 @@ class ToolPathInterpreter:
                     path_points, path_c_values = build_rotated_path(base_path_points, previous_c, current_c)
                     append_path_to_current_polyline(path_points, path_c_values, 1)
 
+            # Mise a jour previous point si ligne avec outil courant, y compris pour un mouvement C pur sans distance XYZ
             if current_line.tool_number != 0:
                 # Recup pt precedent, y compris pour un mouvement C pur sans distance XYZ
                 previous_point = current_point

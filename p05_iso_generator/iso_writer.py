@@ -25,39 +25,46 @@ class IsoWriter:
         """Ajoute une ligne ISO a la sortie."""
         self.out.append(iso_line)
 
+
     def comment(self, comment_text: str) -> None:
         """Ajoute un commentaire ISO a la sortie."""
         self.emit(f"({comment_text})")
 
+
     def insert(self, insert_text: str) -> None:
         """Ajoute une ligne d'insertion a la sortie."""
         self.emit(f"{insert_text}")
+
 
     def header(self) -> None:
         """Ajoute l'en-tete minimal pour un programme de fraisage en coordonnees absolues."""
         self.emit(f"{self.machine.startandendfile_character}")
         self.emit(f"{self.machine.program_prefix}{self.machine.channel_name}000")
 
-    def footer(self) -> None:
+
+    def footer(self, tool_number: int) -> None:
         """Ajoute le pied de page minimal pour un programme de fraisage."""
+        self.emit(self.machine.get_spindle_code_for_tool(tool_number))
         self.emit(f"{self.machine.endprogram_code}")
         self.emit(f"{self.machine.startandendfile_character}")
+
 
     def op_name(self, bloc_number: int, op_name: str) -> None:
         """Ajoute un commentaire d'operation avec le numero de bloc."""
         self.emit(f"{self.machine.block_prefix}{bloc_number} ({op_name})")
 
+
     def channel(self, channel_number: int) -> None:
         """Ajoute un commentaire de canal."""
         self.emit(f"(CANAL {channel_number})")
 
-    # TODO: Pas assez de verif, a reprendre
 
-    def tool_change(self, tool_number: int, tool_comment: str) -> None:
+    def tool_change(self, tool_number: int, tool_comment: str, position_x: float, position_y: float, position_z: float) -> None:
         """Emet les lignes ISO pour un changement d'outil, en fonction du type d'outil et de l'etat de la broche."""
-        
+        self.emit(f"{self.machine.rapid_move_code} {self.machine.toolname_prefix}0 X{format_float_to_iso(position_x)} (DEGAGEMENT OUTIL)")
         self.emit(f"({self.machine.toolname_prefix}{tool_number:02d}{tool_number:02d} - {tool_comment})")
         self.emit(f"{self.machine.toolname_prefix}{tool_number:02d}{tool_number:02d}")
+
 
     # TODO: Gestion surface constante (G96/G97) pas prise en compte pour l'instant, a voir si on en a besoin.
     def spindle_start(self, tool_number: int, spindle_speed: float, spindle_unit: SpindleUnit, spindle_direction: SpindleDirection) -> None:
@@ -67,7 +74,7 @@ class IsoWriter:
             self.emission_state.last_spindle_speed = spindle_speed
             self.emission_state.last_spindle_direction = spindle_direction
             self.emission_state.last_tool_number = tool_number
-            
+
 
     def spindle_stop(self, tool_number: int) -> None:
         """Arrete la broche."""

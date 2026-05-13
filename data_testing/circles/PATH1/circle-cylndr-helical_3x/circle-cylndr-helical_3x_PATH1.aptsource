@@ -1,30 +1,29 @@
 $$ -----------------------------------------------------------------
-$$     Généré le Friday, 08 May 2026 08:37:05
+$$     Généré le Tuesday, 12 May 2026 11:37:29
 $$     CATIA APT VERSION 1.0
 $$ -----------------------------------------------------------------
 CHANNEL,1
-$$ circle-cylndr_3x_PATH1
-$$  Test_Trait_Cercle_3x
-$$ circle-cylndr_3x_PATH1
+$$ circle-cylndr-helical_3x_PATH1
+$$  Test_Trait_Helice_3x
+$$ circle-cylndr-helical_3x_PATH1
 $$     1.000000     0.000000     0.000000     0.000000
 $$     0.000000     1.000000     0.000000     0.000000
 $$     0.000000     0.000000     1.000000     0.000000
 CATMAT/    0.000000,    0.000000,    0.000000,    1.000000,    0.000000$
 ,    0.000000,    0.000000,    1.000000,    0.000000,    0.000000,    0$
-.000000,    1.000000,circle-cylndr_3x_PATH1
-PARTNO/circle-cylndr_3x_PATH1
+.000000,    1.000000,circle-cylndr-helical_3x_PATH1
+PARTNO/circle-cylndr-helical_3x_PATH1
 $$ PPRINT/PP WORD TABLE:Niv_IMS_K.pptable
 $$ IMS PPTABLE 10 November 2009 + Nivarox 18-11-2015
-PART_OPE/Test_Trait_Cercle_3x
-PROGRAM/circle-cylndr_3x_PATH1
+PART_OPE/Test_Trait_Helice_3x
+PROGRAM/circle-cylndr-helical_3x_PATH1
 MACHINE/Tsugami BW128
 CATPROCESS/ModelProcess.CATProcess
 CATPRODUCT/570350435
 MAXRPM/10000.000000
-$$ OPERATION NAME : Changement outil.8
-$$  Début de génération de: Changement outil.8
+$$ OPERATION NAME : Changement outil.23
+$$  Début de génération de: Changement outil.23
 MULTAX/ON
-FROM  /    0.00000,    0.00000,  100.00000, 0.000000, 0.000000, 1.000000
 $$ TOOLCHANGEBEGINNING
 CUTTER/  1.000000,  0.000000,  0.500000,  0.000000,  0.000000,$
          0.000000,  5.000000
@@ -35,7 +34,7 @@ ANGLE,,PITCH,,CORE,    0.000000
 LOADTL/3,ADJUST,1,SPINDL,15000.000000,MILL
 $$ COOLNT/
 $$ TOOLCHANGEEND
-$$  Fin de génération de: Changement outil.8
+$$  Fin de génération de: Changement outil.23
 OP_NAME/Contournage periph - PATH1 - BROCHE Horizontale
 START_OP/MILL
 SPINDL_NAME/NAME,BP,NUMB,1
@@ -662,8 +661,8 @@ GOTO  /    9.00000,    0.05000,    2.47946, 1.000000, 0.000000, 0.000000
 $$  Fin de génération de: Contournage periph - PATH1 - BROCHE Horizonta$
 le
 END_OP/MILL
-$$ OPERATION NAME : Changement outil tournage.23
-$$  Début de génération de: Changement outil tournage.23
+$$ OPERATION NAME : Changement outil tournage.35
+$$  Début de génération de: Changement outil tournage.35
 $$ TOOLCHANGEBEGINNING
 CUTTER/    0.000000
 TPRINT/Porte-plaquette extérieur - PATH1 - EB
@@ -673,7 +672,7 @@ TYPE,MfgExternalTool,WEIGHT,,INV,0,ANGLE,    0.000000
 LOADTL/1,ADJUST,9,TURN
 $$ COOLNT/
 $$ TOOLCHANGEEND
-$$  Fin de génération de: Changement outil tournage.23
+$$  Fin de génération de: Changement outil tournage.35
 OP_NAME/G3 - PATH1 - EB
 START_OP/LATHE
 SPINDL_NAME/NAME,BP,NUMB,1
@@ -716,6 +715,7 @@ FEDRAT/    0.6000,MMPR
 GOTO  /   -0.70711,    0.00000,   -0.80711, 0.000000, 1.000000, 0.000000
 SYNC/2,1,2,1
 SYNC/2,1,2,1
+SYNC/1,1,2,1
 $$  Fin de génération de: G3 - PATH1 - EB
 END_OP/LATHE
 OP_NAME/G2 - PATH1 - EB
@@ -754,8 +754,8 @@ FEDRAT/    0.5000,MMPR
 GOTO  /    4.80711,    0.00000,    4.70711, 0.000000, 1.000000, 0.000000
 $$  Fin de génération de: G2 - PATH1 - EB
 END_OP/LATHE
-$$ OPERATION NAME : Changement outil tournage.22
-$$  Début de génération de: Changement outil tournage.22
+$$ OPERATION NAME : Changement outil tournage.34
+$$  Début de génération de: Changement outil tournage.34
 $$ TOOLCHANGEBEGINNING
 CUTTER/    0.000000
 TPRINT/Porte-plaquette extérieur - PATH1 - FIN
@@ -765,7 +765,7 @@ TYPE,MfgExternalTool,WEIGHT,,INV,0,ANGLE,    0.000000
 LOADTL/2,ADJUST,9,TURN
 $$ COOLNT/
 $$ TOOLCHANGEEND
-$$  Fin de génération de: Changement outil tournage.22
+$$  Fin de génération de: Changement outil tournage.34
 OP_NAME/G3 - PATH1 - FIN
 START_OP/LATHE
 SPINDL_NAME/NAME,BP,NUMB,1
@@ -840,8 +840,8 @@ FEDRAT/    0.8000,MMPR
 GOTO  /    4.70711,    0.00000,    4.70711, 0.000000, 1.000000, 0.000000
 $$  Fin de génération de: G2 - PATH1 - FIN
 END_OP/LATHE
-$$ OPERATION NAME : Changement outil.6
-$$  Début de génération de: Changement outil.6
+$$ OPERATION NAME : Changement outil.21
+$$  Début de génération de: Changement outil.21
 $$ TOOLCHANGEBEGINNING
 CUTTER/  1.000000,  0.000000,  0.500000,  0.000000,  0.000000,$
          0.000000,  5.000000
@@ -852,7 +852,7 @@ ANGLE,,PITCH,,CORE,    0.000000
 LOADTL/3,ADJUST,1,SPINDL,15000.000000,MILL
 $$ COOLNT/
 $$ TOOLCHANGEEND
-$$  Fin de génération de: Changement outil.6
+$$  Fin de génération de: Changement outil.21
 OP_NAME/Contournage periph - PATH1 - BROCHE Horizontale
 START_OP/MILL
 SPINDL_NAME/NAME,BP,NUMB,1
@@ -1477,8 +1477,8 @@ GOTO  /    9.00000,    0.05000,    2.47946, 1.000000, 0.000000, 0.000000
 $$  Fin de génération de: Contournage periph - PATH1 - BROCHE Horizonta$
 le
 END_OP/MILL
-$$ OPERATION NAME : Changement outil.7
-$$  Début de génération de: Changement outil.7
+$$ OPERATION NAME : Changement outil.22
+$$  Début de génération de: Changement outil.22
 $$ TOOLCHANGEBEGINNING
 CUTTER/  1.000000,  0.000000,  0.500000,  0.000000,  0.000000,$
          0.000000,  5.000000
@@ -1489,7 +1489,7 @@ ANGLE,,PITCH,,CORE,    0.000000
 LOADTL/4,ADJUST,1,SPINDL,17500.000000,MILL
 $$ COOLNT/
 $$ TOOLCHANGEEND
-$$  Fin de génération de: Changement outil.7
+$$  Fin de génération de: Changement outil.22
 OP_NAME/Contournage periph - PATH1 - BROCHE Verticale
 START_OP/MILL
 SPINDL_NAME/NAME,BP,NUMB,1
@@ -2113,8 +2113,8 @@ RAPID
 GOTO  /    0.05000,    9.00000,    2.27946, 0.000000, 1.000000, 0.000000
 $$  Fin de génération de: Contournage periph - PATH1 - BROCHE Verticale
 END_OP/MILL
-$$ OPERATION NAME : Changement outil.9
-$$  Début de génération de: Changement outil.9
+$$ OPERATION NAME : Changement outil.24
+$$  Début de génération de: Changement outil.24
 $$ TOOLCHANGEBEGINNING
 CUTTER/  1.000000,  0.000000,  0.500000,  0.000000,  0.000000,$
          0.000000,  5.000000
@@ -2125,7 +2125,7 @@ ANGLE,,PITCH,,CORE,    0.000000
 LOADTL/5,ADJUST,1,SPINDL,15000.000000,MILL
 $$ COOLNT/
 $$ TOOLCHANGEEND
-$$  Fin de génération de: Changement outil.9
+$$  Fin de génération de: Changement outil.24
 OP_NAME/Contournage periph - PATH1 - BROCHE Frontale
 START_OP/MILL
 SPINDL_NAME/NAME,BP,NUMB,1
