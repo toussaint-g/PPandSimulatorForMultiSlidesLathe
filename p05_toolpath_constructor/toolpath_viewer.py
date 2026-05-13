@@ -110,18 +110,20 @@ class ToolPathViewer:
             self.toolpath_parameters.tool_path_circle_resolution)
 
         lookup_table = vtk.vtkLookupTable()
-        lookup_table.SetNumberOfTableValues(2)
+        lookup_table.SetNumberOfTableValues(3)
         lookup_table.Build()
         rapid_color = colors.GetColor3ub(self.toolpath_parameters.tool_path_rapid_move_color)
         work_color = colors.GetColor3ub(self.toolpath_parameters.tool_path_work_move_color)
+        c_axis_color = colors.GetColor3ub(self.toolpath_parameters.tool_path_caxismove_color)
         lookup_table.SetTableValue(0, rapid_color.GetRed() / 255.0, rapid_color.GetGreen() / 255.0, rapid_color.GetBlue() / 255.0, 1.0)
         lookup_table.SetTableValue(1, work_color.GetRed() / 255.0, work_color.GetGreen() / 255.0, work_color.GetBlue() / 255.0, 1.0)
+        lookup_table.SetTableValue(2, c_axis_color.GetRed() / 255.0, c_axis_color.GetGreen() / 255.0, c_axis_color.GetBlue() / 255.0, 1.0)
 
         # Boucle recup actor et ajout dans moteur rendu
         for actor_toolpath in actors_list:
             mapper_toolpath = actor_toolpath.GetMapper()
             mapper_toolpath.SetLookupTable(lookup_table)
-            mapper_toolpath.SetScalarRange(0, 1)
+            mapper_toolpath.SetScalarRange(0, 2)
             mapper_toolpath.ScalarVisibilityOn()
             actor_toolpath.GetProperty().SetLineWidth(self.toolpath_parameters.tool_path_width)
             renderer_toolpath.AddActor(actor_toolpath)

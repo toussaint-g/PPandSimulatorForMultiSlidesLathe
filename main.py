@@ -14,15 +14,13 @@ import os
 import re
 
 # Modules internes
-from p01_iso_analyzer.iso_interpreter import IsoInterpreter
-from p01_iso_analyzer.iso_analyzer_writer import IsoAnalyzerWriter
-from p02_machines_config.machine_parameters import JsonDict
-from p02_machines_config.machines_config_loader import MachinesConfigLoader
-from p03_toolpath_constructor.toolpath_viewer import ToolPathViewer
-from p04_toolpath_config.toolpath_config_loader import ToolPathConfigLoader
-# from p05_iso_generator.apt_interpreter import AptInterpreter
-# from p05_iso_generator.apt_analyser_writer import AptAnalyserWriter
-from p05_iso_generator.apt2iso import convert_file
+from p04_iso_analyzer.iso_interpreter import IsoInterpreter
+from p04_iso_analyzer.iso_analyzer_writer import IsoAnalyzerWriter
+from p01_machines_config.machine_parameters import JsonDict
+from p01_machines_config.machines_config_loader import MachinesConfigLoader
+from p05_toolpath_constructor.toolpath_viewer import ToolPathViewer
+from p02_toolpath_config.toolpath_config_loader import ToolPathConfigLoader
+from p03_iso_generator.apt2iso import convert_file
 
 
 # Fonction selection de fichier

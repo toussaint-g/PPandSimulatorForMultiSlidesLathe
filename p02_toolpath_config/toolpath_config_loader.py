@@ -16,7 +16,7 @@ class ToolPathConfigLoader:
     def load_config():
         """Charge le fichier JSON de configuration du viewer toolpath."""
         try:
-            with open("p04_toolpath_config\\toolpath_config.json", "r", encoding="utf-8") as file:
+            with open("p02_toolpath_config\\toolpath_config.json", "r", encoding="utf-8") as file:
                 ToolPathConfigLoader.data = json.load(file)
         except FileNotFoundError:
             raise FileNotFoundError(

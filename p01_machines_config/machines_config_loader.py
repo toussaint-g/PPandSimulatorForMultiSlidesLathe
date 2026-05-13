@@ -16,7 +16,7 @@ class MachinesConfigLoader:
     def load_config():
         """Charge le fichier JSON et split application / machineslist"""
         try:
-            with open('p02_machines_config\\machines_config.json', 'r', encoding='utf-8') as file:
+            with open('p01_machines_config\\machines_config.json', 'r', encoding='utf-8') as file:
                 MachinesConfigLoader.data = json.load(file)
 
             MachinesConfigLoader.machines_list = MachinesConfigLoader.data.get('machineslist', {})  # type: ignore[assignment]

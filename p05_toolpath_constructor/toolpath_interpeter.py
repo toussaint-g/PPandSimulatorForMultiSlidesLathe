@@ -63,19 +63,11 @@ class ToolPathInterpreter:
         current_polyline_c_values = []
         current_move_group_type = None
 
-        def build_rotated_path(path_points, previous_c, current_c):
-            """Construit la trajectoire en forcant d'abord la rotation du point courant si C change."""
+        def build_path_c_values(path_points, current_c):
+            """Associe un angle C constant aux points d'une trajectoire XYZ."""
             if len(path_points) < 2:
-                return [], []
-
-            if float(current_c) == float(previous_c):
-                return list(path_points), [float(current_c)] * len(path_points)
-
-            # Quand C change en meme temps qu'un deplacement XYZ, on insere un point
-            # duplique au debut pour separer visuellement la rotation du reste du mouvement.
-            rotated_path_points = [path_points[0], path_points[0], *path_points[1:]]
-            rotated_path_c_values = [float(previous_c), float(current_c), *([float(current_c)] * (len(path_points) - 1))]
-            return rotated_path_points, rotated_path_c_values
+                return []
+            return [float(current_c)] * len(path_points)
 
         def build_c_axis_rotation_path(previous_point, current_point, previous_c, current_c):
             """Construit une trajectoire pure de rotation C sur le point courant."""
@@ -226,10 +218,7 @@ class ToolPathInterpreter:
                 # Si changement d'angle C sans deplacement XYZ, on construit une trajectoire de rotation pure sur place pour visualiser la transition.
                 if current_c != previous_c and current_line.distance == 0.0 and current_line.distance_in_material == 0.0:
                     path_points, path_c_values = build_c_axis_rotation_path(previous_point, current_point, previous_c, current_c)
-                    if current_line.move_type == MoveType.LINEAR_MOVE:
-                        append_path_to_current_polyline(path_points, path_c_values, 1)
-                    else:
-                        append_path_to_current_polyline(path_points, path_c_values, 0)
+                    append_path_to_current_polyline(path_points, path_c_values, 2)
 
             # Si distance parcourue
             if current_line.distance != 0.0 or current_line.distance_in_material != 0.0 and current_line.tool_number != 0:
@@ -237,13 +226,21 @@ class ToolPathInterpreter:
                 # Si ligne en avance rapide
                 if current_line.move_type == MoveType.RAPID_MOVE:
                     base_path_points = obj_tool_path_builder.build_line_points(previous_point, current_point)
-                    path_points, path_c_values = build_rotated_path(base_path_points, previous_c, current_c)
+                    if current_c != previous_c:
+                        rotation_points, rotation_c_values = build_c_axis_rotation_path(previous_point, current_point, previous_c, current_c)
+                        append_path_to_current_polyline(rotation_points, rotation_c_values, 2)
+                    path_points = base_path_points
+                    path_c_values = build_path_c_values(path_points, current_c)
                     append_path_to_current_polyline(path_points, path_c_values, 0)
 
                 # Si ligne en avance travail
                 elif current_line.move_type == MoveType.LINEAR_MOVE:
                     base_path_points = obj_tool_path_builder.build_line_points(previous_point, current_point)
-                    path_points, path_c_values = build_rotated_path(base_path_points, previous_c, current_c)
+                    if current_c != previous_c:
+                        rotation_points, rotation_c_values = build_c_axis_rotation_path(previous_point, current_point, previous_c, current_c)
+                        append_path_to_current_polyline(rotation_points, rotation_c_values, 2)
+                    path_points = base_path_points
+                    path_c_values = build_path_c_values(path_points, current_c)
                     append_path_to_current_polyline(path_points, path_c_values, 1)
 
                 # Si cercle CW
@@ -255,7 +252,11 @@ class ToolPathInterpreter:
                         resolution_cercle,
                         True,
                         current_line.work_plane)
-                    path_points, path_c_values = build_rotated_path(base_path_points, previous_c, current_c)
+                    if current_c != previous_c:
+                        rotation_points, rotation_c_values = build_c_axis_rotation_path(previous_point, current_point, previous_c, current_c)
+                        append_path_to_current_polyline(rotation_points, rotation_c_values, 2)
+                    path_points = base_path_points
+                    path_c_values = build_path_c_values(path_points, current_c)
                     append_path_to_current_polyline(path_points, path_c_values, 1)
 
                 # Si cercle CCW
@@ -267,7 +268,11 @@ class ToolPathInterpreter:
                         resolution_cercle,
                         False,
                         current_line.work_plane)
-                    path_points, path_c_values = build_rotated_path(base_path_points, previous_c, current_c)
+                    if current_c != previous_c:
+                        rotation_points, rotation_c_values = build_c_axis_rotation_path(previous_point, current_point, previous_c, current_c)
+                        append_path_to_current_polyline(rotation_points, rotation_c_values, 2)
+                    path_points = base_path_points
+                    path_c_values = build_path_c_values(path_points, current_c)
                     append_path_to_current_polyline(path_points, path_c_values, 1)
 
             # Mise a jour previous point si ligne avec outil courant, y compris pour un mouvement C pur sans distance XYZ
