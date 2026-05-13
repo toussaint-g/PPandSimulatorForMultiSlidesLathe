@@ -8,10 +8,10 @@ import vtk
 from vtkmodules.vtkCommonColor import vtkNamedColors
 
 # Modules internes
-from p02_machines_config.machine_parameters import JsonDict
-from p04_toolpath_config.toolpath_config_loader import ToolPathConfigLoader
-from p04_toolpath_config.toolpath_parameters import ToolPathParameters
-from p03_toolpath_constructor.toolpath_interpeter import ToolPathInterpreter
+from p01_machines_config.machine_parameters import JsonDict
+from p02_toolpath_config.toolpath_config_loader import ToolPathConfigLoader
+from p02_toolpath_config.toolpath_parameters import ToolPathParameters
+from p05_toolpath_constructor.toolpath_interpeter import ToolPathInterpreter
 
 
 class ToolPathViewer:

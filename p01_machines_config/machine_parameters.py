@@ -3,7 +3,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import TypeAlias
-from p02_machines_config.machine_enums import SpindleDirection, ToolComp
+from p01_machines_config.machine_enums import SpindleDirection, ToolComp
 
 
 JsonDict: TypeAlias = dict[str, object]

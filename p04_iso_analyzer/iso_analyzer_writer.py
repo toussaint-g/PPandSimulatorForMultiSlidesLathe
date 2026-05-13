@@ -1,7 +1,7 @@
 
 # -*- coding: utf-8 -*-
 
-from p02_machines_config.machine_parameters import JsonDict, MachineParameters
+from p01_machines_config.machine_parameters import JsonDict, MachineParameters
 
 class IsoAnalyzerWriter:
     """Classe qui permet d'ecrire le rapport"""

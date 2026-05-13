@@ -5,17 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 
-from p02_machines_config.machine_enums import MotionMode
-from p05_iso_generator.apt_parser import csv_floats
-from p05_iso_generator.geometric_calculations import (
+from p01_machines_config.machine_enums import MotionMode
+from p03_iso_generator.apt_parser import csv_floats
+from p03_iso_generator.geometric_calculations import (
     build_point_from_plane as geometry_build_point_from_plane,
     ccw_tangent_vector as geometry_ccw_tangent_vector,
     cw_tangent_vector as geometry_cw_tangent_vector,
     line_circle_intersections_2d as geometry_line_circle_intersections_2d,
     project_point_to_plane as geometry_project_point_to_plane,
 )
-from p05_iso_generator.iso_writer import IsoWriter
-from p05_iso_generator.machine_state import WriterState
+from p03_iso_generator.iso_writer import IsoWriter
+from p03_iso_generator.machine_state import WriterState
 
 
 @dataclass

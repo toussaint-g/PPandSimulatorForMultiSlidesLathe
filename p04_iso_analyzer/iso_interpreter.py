@@ -3,7 +3,7 @@
 import math
 import re
 from enum import Enum
-from p02_machines_config.machine_parameters import JsonDict, MachineParameters, normalize_gm_code
+from p01_machines_config.machine_parameters import JsonDict, MachineParameters, normalize_gm_code
 
 
 def _build_gm_code_pattern(code):

@@ -5,9 +5,9 @@ import math
 import vtk
 
 # Modules internes
-from p01_iso_analyzer.iso_interpreter import MoveType
-from p02_machines_config.machine_parameters import JsonDict, MachineParameters
-from p03_toolpath_constructor.toolpath_builder import ToolPathBuilder
+from p04_iso_analyzer.iso_interpreter import MoveType
+from p01_machines_config.machine_parameters import JsonDict, MachineParameters
+from p05_toolpath_constructor.toolpath_builder import ToolPathBuilder
 
 
 class ToolPathInterpreter:

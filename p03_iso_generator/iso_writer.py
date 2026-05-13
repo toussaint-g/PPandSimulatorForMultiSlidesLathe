@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Optional
 
-from p02_machines_config.machine_enums import FeedrateUnit, MotionMode, SpindleDirection, SpindleUnit, ToolComp
-from p02_machines_config.machine_parameters import JsonDict, MachineParameters
-from p05_iso_generator.iso_format import format_float_to_iso
-from p05_iso_generator.machine_state import EmissionState
+from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, SpindleDirection, SpindleUnit, ToolComp
+from p01_machines_config.machine_parameters import JsonDict, MachineParameters
+from p03_iso_generator.iso_format import format_float_to_iso
+from p03_iso_generator.machine_state import EmissionState
 
 
 class IsoWriter:

@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from p02_machines_config.machine_parameters import JsonDict
-from p05_iso_generator.apt_handlers import DISPATCH, h_default
-from p05_iso_generator.apt_parser import normalize_apt_text, parse_keyword_and_rhs
-from p05_iso_generator.iso_writer import IsoWriter
-from p05_iso_generator.machine_state import WriterState
+from p01_machines_config.machine_parameters import JsonDict
+from p03_iso_generator.apt_handlers import DISPATCH, h_default
+from p03_iso_generator.apt_parser import normalize_apt_text, parse_keyword_and_rhs
+from p03_iso_generator.iso_writer import IsoWriter
+from p03_iso_generator.machine_state import WriterState
 
 
 def _is_unmanaged_debug_line(iso_line: str) -> bool:

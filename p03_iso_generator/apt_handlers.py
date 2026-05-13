@@ -5,12 +5,12 @@ from __future__ import annotations
 from functools import partial
 from typing import Callable
 
-from p02_machines_config.machine_enums import FeedrateUnit, MotionMode, SpindleDirection, SpindleUnit, ToolComp, ToolType
-from p05_iso_generator.apt_parser import csv_floats, csv_tokens
-from p05_iso_generator.helical import emit_helical_move, emit_helical_not_supported, parse_helical_definition, solve_helical_definition
-from p05_iso_generator.iso_writer import IsoWriter
-from p05_iso_generator.machine_state import WriterState
-from p05_iso_generator.tlon import emit_tlon_arc, emit_tlon_not_supported, parse_tlon_definition, solve_tlon_definition
+from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, SpindleDirection, SpindleUnit, ToolComp, ToolType
+from p03_iso_generator.apt_parser import csv_floats, csv_tokens
+from p03_iso_generator.helical import emit_helical_move, emit_helical_not_supported, parse_helical_definition, solve_helical_definition
+from p03_iso_generator.iso_writer import IsoWriter
+from p03_iso_generator.machine_state import WriterState
+from p03_iso_generator.tlon import emit_tlon_arc, emit_tlon_not_supported, parse_tlon_definition, solve_tlon_definition
 
 
 Handler = Callable[[str, str, WriterState, IsoWriter], None]
