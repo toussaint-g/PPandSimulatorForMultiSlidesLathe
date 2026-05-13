@@ -90,9 +90,6 @@ class MachineParameters:
     ipartvector: list[float] | None
     jpartvector: list[float] | None
     kpartvector: list[float] | None
-    ipathvector: list[float] | None
-    jpathvector: list[float] | None
-    kpathvector: list[float] | None
 
     def get_tool_config(self, tool_number: int) -> JsonDict | None:
         """Retourne la configuration JSON de l'outil pour le canal courant."""
@@ -228,9 +225,6 @@ class MachineParameters:
                 ipartvector=machine_informations.get("ipartvector"),
                 jpartvector=machine_informations.get("jpartvector"),
                 kpartvector=machine_informations.get("kpartvector"),
-                ipathvector=channel_config.get("ipathvector"),
-                jpathvector=channel_config.get("jpathvector"),
-                kpathvector=channel_config.get("kpathvector"),
             )
         except KeyError:
             raise ValueError("MachineConfigError: une cle est absente dans le fichier JSON")

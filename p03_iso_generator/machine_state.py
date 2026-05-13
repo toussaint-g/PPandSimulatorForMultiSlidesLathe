@@ -30,6 +30,7 @@ class WriterState:
     position_x: float = 0.0
     position_y: float = 0.0
     position_z: float = 0.0
+    position_c: float = 0.0
 
     indirv_x: Optional[float] = None
     indirv_y: Optional[float] = None
@@ -46,6 +47,7 @@ class EmissionState:
     last_x_position: Optional[float] = None
     last_y_position: Optional[float] = None
     last_z_position: Optional[float] = None
+    last_c_position: Optional[float] = None
 
     last_feedrate_value: Optional[float] = None
     last_feedrate_unit: Optional[FeedrateUnit] = None

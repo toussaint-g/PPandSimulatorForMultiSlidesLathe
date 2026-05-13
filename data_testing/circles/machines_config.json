@@ -34,9 +34,6 @@
       "channelslist": {
         "1": {
           "hometool": [19, 0, -5],
-          "ipathvector": [1, 0, 0],
-          "jpathvector": [0, 1, 0],
-          "kpathvector": [0, 0, 1],
           "listoftools": [
             { "toolnumber": 1, "tooltype": 0, "ktoolvector": [1, 0, 0], "workplane": [0, 1, 0], "spindleclwstart": "M4", "spindlecclwstart": "M3", "spindlestop": "M5" },
             { "toolnumber": 2, "tooltype": 0, "ktoolvector": [0, 0, -1], "workplane": [0, 1, 0], "spindleclwstart": "M14", "spindlecclwstart": "M13", "spindlestop": "M15" },
@@ -47,9 +44,6 @@
         },
         "2": {
           "hometool": [-19, 0, 5],
-          "ipathvector": [1, 0, 0],
-          "jpathvector": [0, 1, 0],
-          "kpathvector": [0, 0, 1],
           "listoftools": [
             { "toolnumber": 31, "tooltype": 0, "ktoolvector": [-1, 0, 0], "workplane": [0, 1, 0], "spindleclwstart": "M104", "spindlecclwstart": "M103", "spindlestop": "M105" },
             { "toolnumber": 32, "tooltype": 0, "ktoolvector": [0, 0, 1], "workplane": [0, 1, 0], "spindleclwstart": "M114", "spindlecclwstart": "M113", "spindlestop": "M115" },
@@ -60,9 +54,6 @@
         },
         "3": {
           "hometool": [19, 0, -5],
-          "ipathvector": [-1, 0, 0],
-          "jpathvector": [0, 1, 0],
-          "kpathvector": [0, 0, 1],
           "listoftools": [
             { "toolnumber": 11, "tooltype": 0, "ktoolvector": [-1, 0, 0], "workplane": [0, 1, 0], "spindleclwstart": "M204", "spindlecclwstart": "M203", "spindlestop": "M205" },
             { "toolnumber": 12, "tooltype": 0, "ktoolvector": [0, 0, -1], "workplane": [0, 1, 0], "spindleclwstart": "M214", "spindlecclwstart": "M213", "spindlestop": "M215" },
@@ -75,4 +66,3 @@
     }
   }
 }
-

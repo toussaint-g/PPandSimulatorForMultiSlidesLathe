@@ -67,10 +67,11 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     previous_tool_number = state.tool_number
     state.tool_number = int(tool_tokens[0])
 
-    if previous_tool_number is not None and state.spindle_on:
+    if (previous_tool_number is not None
+        and iso_writer.machine.get_spindle_code_for_tool(previous_tool_number) != iso_writer.machine.get_spindle_code_for_tool(state.tool_number)
+        and state.spindle_on):
         iso_writer.spindle_stop(previous_tool_number)
         state.spindle_on = False
-    #state.previous_tool_type = None
 
     # Apres un changement d'outil, on suppose que la machine revient a la
     # position de reference de l'outil pour eviter les deplacements rapides inattendus.

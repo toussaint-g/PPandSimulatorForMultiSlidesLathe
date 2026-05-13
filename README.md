@@ -59,11 +59,10 @@ Pour le parametrage du rendu visuel des trajectoires outils. Plusieurs options d
 Pour le parametrage des machines d'usinage. Un nombre d'options sont parametrables comme les **codes M et G**, les dispositions d'outils, etc...
 #### Informations sur le parametrage:
 - **partvector**: toujours a i[1, 0, 0], j[0, 1, 0] et k[0, 0, 1].
-- **pathvector**: repere pour les transformations de coordonnees entre canaux (ex: application d'une symetrie des coordonnees X).
-- **toolvector**: repere determinant les orientations des outils dans la machine (pour le calcul des angles de rotation en fraisage).
+- **toolvector**: repere determinant les orientations des outils dans la machine. Le **ktoolvector** est compare au **ipartvector** pour determiner si les coordonnees X doivent etre inversees dans le rendu toolpath.
 - **workplane**: repere determinant les plans de travail de chaque outil. Valeurs negatives pas utiles car plan de travail uniquement. /!\ Attention: les plans de travail pour les deplacements circulaires sont donnees uniquement par ces workplanes! Non prise en compte des G17/G18/G19 donnees par les programmes.
 - **tooltype**: 
     - **tool_type: 0** -> outil de tournage.
 	- **tool_type: 1** -> outil de fraisage.
-	- **tool_type: 2** -> outil stopper (pour ravitaillement matiere).
+	- **tool_type: 2** -> outil stopper (pour ravitaillement matiere) -> pas cable pour l'instant.
 - **hometool X** doit-etre renseigne au rayon et doit-etre place par rapport au partvector.

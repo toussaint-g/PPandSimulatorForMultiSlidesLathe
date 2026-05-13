@@ -33,9 +33,28 @@ class ToolPathInterpreter:
             raise ValueError("VectorFormatError: la composante non nulle doit valoir -1 ou 1")
         return sign
 
-    def get_polydata_symmetry_plane_vector(self):
-        """Compare ipart/ipath et retourne ipart si inversion (symetrie necessaire)."""
-        if self._extract_axis_sign(self.machine.ipartvector) != self._extract_axis_sign(self.machine.ipathvector):
+    @staticmethod
+    def _extract_axis_index(vector):
+        """Retourne l'index de l'axe principal d'un vecteur base."""
+        if not isinstance(vector, list) or len(vector) != 3:
+            raise ValueError("VectorFormatError: le vecteur doit contenir 3 composantes")
+
+        non_zero_indices = [index for index, value in enumerate(vector) if value != 0]
+        if len(non_zero_indices) != 1:
+            raise ValueError("VectorFormatError: le vecteur doit avoir une seule composante non nulle")
+        return non_zero_indices[0]
+
+    def get_polydata_symmetry_plane_vector(self, tool_number):
+        """Compare ipart/ktool et retourne ipart si une inversion X outil est necessaire."""
+        tool_config = self.machine.get_required_tool_config(tool_number)
+        ktoolvector = tool_config.get("ktoolvector")
+        part_axis = self._extract_axis_index(self.machine.ipartvector)
+        tool_axis = self._extract_axis_index(ktoolvector)
+        part_sign = self._extract_axis_sign(self.machine.ipartvector)
+        tool_sign = self._extract_axis_sign(ktoolvector)
+        if part_axis != tool_axis:
+            return None
+        if part_sign != tool_sign:
             return {"name": "ipartvector", "vector": self.machine.ipartvector}
         return None
 
@@ -44,7 +63,6 @@ class ToolPathInterpreter:
 
         # Instanciation des classes
         obj_tool_path_builder = ToolPathBuilder()
-        symmetry_plane_vector = self.get_polydata_symmetry_plane_vector()
 
         # Def structures points et lignes
         points_toolpath = vtk.vtkPoints()
@@ -69,17 +87,86 @@ class ToolPathInterpreter:
                 return []
             return [float(current_c)] * len(path_points)
 
-        def build_c_axis_rotation_path(previous_point, current_point, previous_c, current_c):
-            """Construit une trajectoire pure de rotation C sur le point courant."""
-            if float(previous_c) == float(current_c):
+        def interpolate_polyline_points(path_points, num_segments):
+            """Reechantillonne une polyligne avec un nombre fixe de segments."""
+            if len(path_points) < 2:
+                return []
+
+            segment_lengths = []
+            total_length = 0.0
+            for start_point, end_point in zip(path_points[:-1], path_points[1:]):
+                segment_length = math.dist(start_point[:3], end_point[:3])
+                segment_lengths.append(segment_length)
+                total_length += segment_length
+
+            if total_length == 0.0:
+                point = (
+                    float(path_points[0][0]),
+                    float(path_points[0][1]),
+                    float(path_points[0][2]),
+                )
+                return [point] * (num_segments + 1)
+
+            interpolated_points = []
+            current_segment_index = 0
+            length_before_segment = 0.0
+            for step_index in range(num_segments + 1):
+                target_length = total_length * step_index / num_segments
+                while (
+                    current_segment_index < len(segment_lengths) - 1
+                    and length_before_segment + segment_lengths[current_segment_index] < target_length
+                ):
+                    length_before_segment += segment_lengths[current_segment_index]
+                    current_segment_index += 1
+
+                start_point = path_points[current_segment_index]
+                end_point = path_points[current_segment_index + 1]
+                segment_length = segment_lengths[current_segment_index]
+                ratio = 0.0 if segment_length == 0.0 else (target_length - length_before_segment) / segment_length
+                interpolated_points.append((
+                    float(start_point[0]) + (float(end_point[0]) - float(start_point[0])) * ratio,
+                    float(start_point[1]) + (float(end_point[1]) - float(start_point[1])) * ratio,
+                    float(start_point[2]) + (float(end_point[2]) - float(start_point[2])) * ratio,
+                ))
+
+            return interpolated_points
+
+        def build_c_axis_interpolated_path(path_points, previous_c, current_c):
+            """Interpole C seul ou XYZC pour eviter une corde unique apres rotation."""
+            if len(path_points) < 2:
                 return [], []
 
+            if float(previous_c) == float(current_c):
+                return list(path_points), build_path_c_values(path_points, current_c)
+
+            xyz_length = 0.0
+            for start_point, end_point in zip(path_points[:-1], path_points[1:]):
+                xyz_length += math.dist(start_point[:3], end_point[:3])
+
+            max_radius = max(math.hypot(float(point[0]), float(point[1])) for point in path_points)
+            c_arc_length = max_radius * abs(math.radians(float(current_c) - float(previous_c)))
+            target_resolution = max(float(resolution_cercle), 1e-9)
+            num_segments = max(
+                len(path_points) - 1,
+                int(math.ceil(max(xyz_length, c_arc_length) / target_resolution)),
+                1,
+            )
+
+            interpolated_points = interpolate_polyline_points(path_points, num_segments)
+            interpolated_c_values = [
+                float(previous_c) + (float(current_c) - float(previous_c)) * step_index / num_segments
+                for step_index in range(num_segments + 1)
+            ]
+            return interpolated_points, interpolated_c_values
+
+        def build_c_axis_rotation_path(previous_point, previous_c, current_c):
+            """Construit une rotation C pure autour du point courant."""
             pivot_point = (
                 float(previous_point[0]),
                 float(previous_point[1]),
                 float(previous_point[2]),
             )
-            return [pivot_point, pivot_point], [float(previous_c), float(current_c)]
+            return build_c_axis_interpolated_path([pivot_point, pivot_point], previous_c, current_c)
 
         def flush_current_polyline():
             """Ecrit la polyligne courante dans les structures VTK."""
@@ -148,6 +235,7 @@ class ToolPathInterpreter:
             poly_data_toolpath = obj_vtk_functions.apply_c_rotation_to_polydata(poly_data_toolpath)
 
             # Application symetrie polydata si necessaire
+            symmetry_plane_vector = self.get_polydata_symmetry_plane_vector(current_tool)
             if symmetry_plane_vector is not None:
                 poly_data_toolpath = obj_vtk_functions.apply_symmetry_to_polydata(
                     poly_data_toolpath,
@@ -217,31 +305,33 @@ class ToolPathInterpreter:
 
                 # Si changement d'angle C sans deplacement XYZ, on construit une trajectoire de rotation pure sur place pour visualiser la transition.
                 if current_c != previous_c and current_line.distance == 0.0 and current_line.distance_in_material == 0.0:
-                    path_points, path_c_values = build_c_axis_rotation_path(previous_point, current_point, previous_c, current_c)
+                    path_points, path_c_values = build_c_axis_rotation_path(previous_point, previous_c, current_c)
                     append_path_to_current_polyline(path_points, path_c_values, 2)
 
             # Si distance parcourue
-            if current_line.distance != 0.0 or current_line.distance_in_material != 0.0 and current_line.tool_number != 0:
+            if (current_line.distance != 0.0 or current_line.distance_in_material != 0.0) and current_line.tool_number != 0:
 
                 # Si ligne en avance rapide
                 if current_line.move_type == MoveType.RAPID_MOVE:
                     base_path_points = obj_tool_path_builder.build_line_points(previous_point, current_point)
                     if current_c != previous_c:
-                        rotation_points, rotation_c_values = build_c_axis_rotation_path(previous_point, current_point, previous_c, current_c)
-                        append_path_to_current_polyline(rotation_points, rotation_c_values, 2)
-                    path_points = base_path_points
-                    path_c_values = build_path_c_values(path_points, current_c)
-                    append_path_to_current_polyline(path_points, path_c_values, 0)
+                        path_points, path_c_values = build_c_axis_interpolated_path(base_path_points, previous_c, current_c)
+                        append_path_to_current_polyline(path_points, path_c_values, 2)
+                    else:
+                        path_points = base_path_points
+                        path_c_values = build_path_c_values(path_points, current_c)
+                        append_path_to_current_polyline(path_points, path_c_values, 0)
 
                 # Si ligne en avance travail
                 elif current_line.move_type == MoveType.LINEAR_MOVE:
                     base_path_points = obj_tool_path_builder.build_line_points(previous_point, current_point)
                     if current_c != previous_c:
-                        rotation_points, rotation_c_values = build_c_axis_rotation_path(previous_point, current_point, previous_c, current_c)
-                        append_path_to_current_polyline(rotation_points, rotation_c_values, 2)
-                    path_points = base_path_points
-                    path_c_values = build_path_c_values(path_points, current_c)
-                    append_path_to_current_polyline(path_points, path_c_values, 1)
+                        path_points, path_c_values = build_c_axis_interpolated_path(base_path_points, previous_c, current_c)
+                        append_path_to_current_polyline(path_points, path_c_values, 2)
+                    else:
+                        path_points = base_path_points
+                        path_c_values = build_path_c_values(path_points, current_c)
+                        append_path_to_current_polyline(path_points, path_c_values, 1)
 
                 # Si cercle CW
                 elif current_line.move_type == MoveType.CIRCULAR_MOVE_CW:
@@ -253,11 +343,12 @@ class ToolPathInterpreter:
                         True,
                         current_line.work_plane)
                     if current_c != previous_c:
-                        rotation_points, rotation_c_values = build_c_axis_rotation_path(previous_point, current_point, previous_c, current_c)
-                        append_path_to_current_polyline(rotation_points, rotation_c_values, 2)
-                    path_points = base_path_points
-                    path_c_values = build_path_c_values(path_points, current_c)
-                    append_path_to_current_polyline(path_points, path_c_values, 1)
+                        path_points, path_c_values = build_c_axis_interpolated_path(base_path_points, previous_c, current_c)
+                        append_path_to_current_polyline(path_points, path_c_values, 2)
+                    else:
+                        path_points = base_path_points
+                        path_c_values = build_path_c_values(path_points, current_c)
+                        append_path_to_current_polyline(path_points, path_c_values, 1)
 
                 # Si cercle CCW
                 elif current_line.move_type == MoveType.CIRCULAR_MOVE_CCW:
@@ -269,11 +360,12 @@ class ToolPathInterpreter:
                         False,
                         current_line.work_plane)
                     if current_c != previous_c:
-                        rotation_points, rotation_c_values = build_c_axis_rotation_path(previous_point, current_point, previous_c, current_c)
-                        append_path_to_current_polyline(rotation_points, rotation_c_values, 2)
-                    path_points = base_path_points
-                    path_c_values = build_path_c_values(path_points, current_c)
-                    append_path_to_current_polyline(path_points, path_c_values, 1)
+                        path_points, path_c_values = build_c_axis_interpolated_path(base_path_points, previous_c, current_c)
+                        append_path_to_current_polyline(path_points, path_c_values, 2)
+                    else:
+                        path_points = base_path_points
+                        path_c_values = build_path_c_values(path_points, current_c)
+                        append_path_to_current_polyline(path_points, path_c_values, 1)
 
             # Mise a jour previous point si ligne avec outil courant, y compris pour un mouvement C pur sans distance XYZ
             if current_line.tool_number != 0:
