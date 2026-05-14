@@ -18,45 +18,23 @@ class ToolPathInterpreter:
         self.machine = MachineParameters.from_config(machine_config, channel_name)
         self.part_thickness = part_thickness
 
-    @staticmethod
-    def _extract_axis_sign(vector):
-        """Retourne le signe de l'axe principal d'un vecteur base (ex: [-1,0,0] -> -1)."""
-        if not isinstance(vector, list) or len(vector) != 3:
-            raise ValueError("VectorFormatError: le vecteur doit contenir 3 composantes")
-
-        non_zero_values = [value for value in vector if value != 0]
-        if len(non_zero_values) != 1:
-            raise ValueError("VectorFormatError: le vecteur doit avoir une seule composante non nulle")
-
-        sign = non_zero_values[0]
-        if sign not in (-1, 1):
-            raise ValueError("VectorFormatError: la composante non nulle doit valoir -1 ou 1")
-        return sign
-
-    @staticmethod
-    def _extract_axis_index(vector):
-        """Retourne l'index de l'axe principal d'un vecteur base."""
-        if not isinstance(vector, list) or len(vector) != 3:
-            raise ValueError("VectorFormatError: le vecteur doit contenir 3 composantes")
-
-        non_zero_indices = [index for index, value in enumerate(vector) if value != 0]
-        if len(non_zero_indices) != 1:
-            raise ValueError("VectorFormatError: le vecteur doit avoir une seule composante non nulle")
-        return non_zero_indices[0]
-
-    def get_polydata_symmetry_plane_vector(self, tool_number):
-        """Compare ipart/ktool et retourne ipart si une inversion X outil est necessaire."""
+    def get_polydata_symmetry_plane_vectors(self, tool_number):
+        """Retourne les axes de symetrie demandes par la configuration outil."""
         tool_config = self.machine.get_required_tool_config(tool_number)
-        ktoolvector = tool_config.get("ktoolvector")
-        part_axis = self._extract_axis_index(self.machine.ipartvector)
-        tool_axis = self._extract_axis_index(ktoolvector)
-        part_sign = self._extract_axis_sign(self.machine.ipartvector)
-        tool_sign = self._extract_axis_sign(ktoolvector)
-        if part_axis != tool_axis:
-            return None
-        if part_sign != tool_sign:
-            return {"name": "ipartvector", "vector": self.machine.ipartvector}
-        return None
+        symmetry_plane_vectors = []
+
+        xmirror = tool_config.get("xmirror", False)
+        ymirror = tool_config.get("ymirror", False)
+        if not isinstance(xmirror, bool):
+            raise ValueError(f"MachineConfigError: xmirror invalide pour l'outil {tool_number}")
+        if not isinstance(ymirror, bool):
+            raise ValueError(f"MachineConfigError: ymirror invalide pour l'outil {tool_number}")
+
+        if xmirror:
+            symmetry_plane_vectors.append({"name": "xmirror", "vector": [1, 0, 0]})
+        if ymirror:
+            symmetry_plane_vectors.append({"name": "ymirror", "vector": [0, 1, 0]})
+        return symmetry_plane_vectors
 
     def analyze(self, list_datas, resolution_cercle):
         """Cette methode recupere les donnees utiles a la construction des trajectoires"""
@@ -235,8 +213,7 @@ class ToolPathInterpreter:
             poly_data_toolpath = obj_vtk_functions.apply_c_rotation_to_polydata(poly_data_toolpath)
 
             # Application symetrie polydata si necessaire
-            symmetry_plane_vector = self.get_polydata_symmetry_plane_vector(current_tool)
-            if symmetry_plane_vector is not None:
+            for symmetry_plane_vector in self.get_polydata_symmetry_plane_vectors(current_tool):
                 poly_data_toolpath = obj_vtk_functions.apply_symmetry_to_polydata(
                     poly_data_toolpath,
                     symmetry_plane_vector["vector"])

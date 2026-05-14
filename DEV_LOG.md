@@ -22,7 +22,7 @@
 - Gestion des spindle on/off: cable avec on/off a chaque changement d'outil. Voir pour mettre plus d'intelligence a ce niveau (pas de on/off si meme broche, etc...).
 ### Choses a noter dans la doc finale:
 - Pas de prise en compte des correcteurs en tournage mais en fraisage uniquement.
-- Inversion des coordonnees x basee sur comparaison ipartvector et ktoolvector. Inversion des coordonnees Y non prise en compte.
+- Inversion des coordonnees X/Y basee sur les booleens outil xmirror et ymirror.
 - Pour les machines ayant un peigne monobloc en broche principale (type B075), il faut programmer dans CATIA tous les outils du meme cote (repere canal 1). L'inversion des coordonnees X se fait par le PP.
 
 ## Partie analyse:

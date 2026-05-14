@@ -35,31 +35,31 @@
         "1": {
           "hometool": [19, 0, -5],
           "listoftools": [
-            { "toolnumber": 1, "tooltype": 0, "ktoolvector": [1, 0, 0], "workplane": [0, 1, 0], "spindleclwstart": "M4", "spindlecclwstart": "M3", "spindlestop": "M5" },
-            { "toolnumber": 2, "tooltype": 0, "ktoolvector": [0, 0, -1], "workplane": [0, 1, 0], "spindleclwstart": "M14", "spindlecclwstart": "M13", "spindlestop": "M15" },
-            { "toolnumber": 3, "tooltype": 1, "ktoolvector": [1, 0, 0], "workplane": [1, 0, 0], "spindleclwstart": "M23", "spindlecclwstart": "M24", "spindlestop": "M25", "mainspindletocaxisstart": "M50", "mainspindletocaxisstop": "M51", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" },
-            { "toolnumber": 4, "tooltype": 1, "ktoolvector": [0, 1, 0], "workplane": [0, 1, 0], "spindleclwstart": "M33", "spindlecclwstart": "M34", "spindlestop": "M35", "mainspindletocaxisstart": "M50", "mainspindletocaxisstop": "M51", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" },
-            { "toolnumber": 5, "tooltype": 1, "ktoolvector": [0, 0, -1], "workplane": [0, 0, 1], "spindleclwstart": "M43", "spindlecclwstart": "M44", "spindlestop": "M45", "mainspindletocaxisstart": "M50", "mainspindletocaxisstop": "M51", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" }
+            { "toolnumber": 1, "tooltype": 0, "xmirror": false, "ymirror": false,"workplane": [0, 1, 0], "spindleclwstart": "M4", "spindlecclwstart": "M3", "spindlestop": "M5" },
+            { "toolnumber": 2, "tooltype": 0, "xmirror": false, "ymirror": false,"workplane": [0, 1, 0], "spindleclwstart": "M14", "spindlecclwstart": "M13", "spindlestop": "M15" },
+            { "toolnumber": 3, "tooltype": 1, "xmirror": false, "ymirror": false, "ktoolvector": [1, 0, 0], "workplane": [1, 0, 0], "spindleclwstart": "M23", "spindlecclwstart": "M24", "spindlestop": "M25", "mainspindletocaxisstart": "M50", "mainspindletocaxisstop": "M51", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" },
+            { "toolnumber": 4, "tooltype": 1, "xmirror": false, "ymirror": false, "ktoolvector": [0, 1, 0], "workplane": [0, 1, 0], "spindleclwstart": "M33", "spindlecclwstart": "M34", "spindlestop": "M35", "mainspindletocaxisstart": "M50", "mainspindletocaxisstop": "M51", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" },
+            { "toolnumber": 5, "tooltype": 1, "xmirror": false, "ymirror": false, "ktoolvector": [0, 0, -1], "workplane": [0, 0, 1], "spindleclwstart": "M43", "spindlecclwstart": "M44", "spindlestop": "M45", "mainspindletocaxisstart": "M50", "mainspindletocaxisstop": "M51", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" }
           ]
         },
         "2": {
           "hometool": [-19, 0, 5],
           "listoftools": [
-            { "toolnumber": 31, "tooltype": 0, "ktoolvector": [-1, 0, 0], "workplane": [0, 1, 0], "spindleclwstart": "M104", "spindlecclwstart": "M103", "spindlestop": "M105" },
-            { "toolnumber": 32, "tooltype": 0, "ktoolvector": [0, 0, 1], "workplane": [0, 1, 0], "spindleclwstart": "M114", "spindlecclwstart": "M113", "spindlestop": "M115" },
-            { "toolnumber": 33, "tooltype": 1, "ktoolvector": [-1, 0, 0], "workplane": [1, 0, 0], "spindleclwstart": "M123", "spindlecclwstart": "M124", "spindlestop": "M125", "mainspindletocaxisstart": "M150", "mainspindletocaxisstop": "M151", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" },
-            { "toolnumber": 34, "tooltype": 1, "ktoolvector": [0, 1, 0], "workplane": [0, 1, 0], "spindleclwstart": "M133", "spindlecclwstart": "M134", "spindlestop": "M135", "mainspindletocaxisstart": "M150", "mainspindletocaxisstop": "M151", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" },
-            { "toolnumber": 35, "tooltype": 1, "ktoolvector": [0, 0, 1], "workplane": [0, 0, 1], "spindleclwstart": "M143", "spindlecclwstart": "M144", "spindlestop": "M145", "mainspindletocaxisstart": "M150", "mainspindletocaxisstop": "M151", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" }
+            { "toolnumber": 31, "tooltype": 0, "xmirror": false, "ymirror": false,"workplane": [0, 1, 0], "spindleclwstart": "M104", "spindlecclwstart": "M103", "spindlestop": "M105" },
+            { "toolnumber": 32, "tooltype": 0, "xmirror": false, "ymirror": false,"workplane": [0, 1, 0], "spindleclwstart": "M114", "spindlecclwstart": "M113", "spindlestop": "M115" },
+            { "toolnumber": 33, "tooltype": 1, "xmirror": false, "ymirror": false, "ktoolvector": [-1, 0, 0], "workplane": [1, 0, 0], "spindleclwstart": "M123", "spindlecclwstart": "M124", "spindlestop": "M125", "mainspindletocaxisstart": "M150", "mainspindletocaxisstop": "M151", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" },
+            { "toolnumber": 34, "tooltype": 1, "xmirror": false, "ymirror": false, "ktoolvector": [0, 1, 0], "workplane": [0, 1, 0], "spindleclwstart": "M133", "spindlecclwstart": "M134", "spindlestop": "M135", "mainspindletocaxisstart": "M150", "mainspindletocaxisstop": "M151", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" },
+            { "toolnumber": 35, "tooltype": 1, "xmirror": false, "ymirror": false, "ktoolvector": [0, 0, 1], "workplane": [0, 0, 1], "spindleclwstart": "M143", "spindlecclwstart": "M144", "spindlestop": "M145", "mainspindletocaxisstart": "M150", "mainspindletocaxisstop": "M151", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" }
           ]
         },
         "3": {
           "hometool": [19, 0, -5],
           "listoftools": [
-            { "toolnumber": 11, "tooltype": 0, "ktoolvector": [-1, 0, 0], "workplane": [0, 1, 0], "spindleclwstart": "M204", "spindlecclwstart": "M203", "spindlestop": "M205" },
-            { "toolnumber": 12, "tooltype": 0, "ktoolvector": [0, 0, -1], "workplane": [0, 1, 0], "spindleclwstart": "M214", "spindlecclwstart": "M213", "spindlestop": "M215" },
-            { "toolnumber": 16, "tooltype": 1, "ktoolvector": [-1, 0, 0], "workplane": [1, 0, 0], "spindleclwstart": "M223", "spindlecclwstart": "M224", "spindlestop": "M225", "mainspindletocaxisstart": "M250", "mainspindletocaxisstop": "M251", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" },
-            { "toolnumber": 17, "tooltype": 1, "ktoolvector": [0, 1, 0], "workplane": [0, 1, 0], "spindleclwstart": "M233", "spindlecclwstart": "M234", "spindlestop": "M235", "mainspindletocaxisstart": "M250", "mainspindletocaxisstop": "M251", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" },
-            { "toolnumber": 18, "tooltype": 1, "ktoolvector": [0, 0, -1], "workplane": [0, 0, 1], "spindleclwstart": "M243", "spindlecclwstart": "M244", "spindlestop": "M245", "mainspindletocaxisstart": "M250", "mainspindletocaxisstop": "M251", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" }
+            { "toolnumber": 11, "tooltype": 0, "xmirror": true,"ymirror": true,"workplane": [0, 1, 0], "spindleclwstart": "M204", "spindlecclwstart": "M203", "spindlestop": "M205" },
+            { "toolnumber": 12, "tooltype": 0, "xmirror": true,"ymirror": true,"workplane": [0, 1, 0], "spindleclwstart": "M214", "spindlecclwstart": "M213", "spindlestop": "M215" },
+            { "toolnumber": 16, "tooltype": 1, "xmirror": true, "ymirror": true, "ktoolvector": [-1, 0, 0], "workplane": [1, 0, 0], "spindleclwstart": "M223", "spindlecclwstart": "M224", "spindlestop": "M225", "mainspindletocaxisstart": "M250", "mainspindletocaxisstop": "M251", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" },
+            { "toolnumber": 17, "tooltype": 1, "xmirror": true, "ymirror": true, "ktoolvector": [0, 1, 0], "workplane": [0, 1, 0], "spindleclwstart": "M233", "spindlecclwstart": "M234", "spindlestop": "M235", "mainspindletocaxisstart": "M250", "mainspindletocaxisstop": "M251", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" },
+            { "toolnumber": 18, "tooltype": 1, "xmirror": true, "ymirror": true, "ktoolvector": [0, 0, -1], "workplane": [0, 0, 1], "spindleclwstart": "M243", "spindlecclwstart": "M244", "spindlestop": "M245", "mainspindletocaxisstart": "M250", "mainspindletocaxisstop": "M251", "toolcompleft": "G41", "toolcompright": "G42", "toolcompoff": "G40" }
           ]
         }
       }
