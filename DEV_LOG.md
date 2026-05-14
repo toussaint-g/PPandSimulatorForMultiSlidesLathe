@@ -5,18 +5,14 @@
 
 ## Partie PP:
 ### Points traites:
-- CIRCLE -> OK.
-- CYLNDR -> OK.
-- Canal 1 uniquement teste !!
 ### Prochaines actions:
-- Gestion HELICAL a implementer.
 - Gestion des orientations d'outils pour la generations des rotations C.
 - Revoir la gestion des hometool (GOTO avant changement d'outil).
 - Gestion de tous les canaux.
 ### Points a verifier (dans app):
-- Les arret de broche: rotation permanente en tournage et arret a chaque outil en fraisage. Voir aussi lors du chargement du 1er outil (-> pas de M5 avant l'appel du 1er outil dans le prog).
-- Pas d'arret de broche en cas de passage tournage -> fraisage.
-- Faire une verification de coherence des home_tool_x. Pas mal de modifications faites et pas les datas pour faire toutes les verification appropriees (commit **x_diameter update**).
+- Faire une verification des arrets de broche en cas de passage tournage -> fraisage.
+- Faire une verification de coherence des home_tool_x.
+
 ### Points a verifier (dans CATIA):
 ### Ameliorations a prevoir:
 - Gestion des spindle on/off: cable avec on/off a chaque changement d'outil. Voir pour mettre plus d'intelligence a ce niveau (pas de on/off si meme broche, etc...).
@@ -44,5 +40,5 @@
 ### Points a verifier (dans CATIA):
 ### Ameliorations a prevoir:
 ### Choses a noter dans la doc finale:
-- Les cordonnees affichees sont toujours au rayon (a confirmer car pas sur).
+- Les coordonnees affichees sont toujours au rayon (a confirmer car pas sur).
 - 
