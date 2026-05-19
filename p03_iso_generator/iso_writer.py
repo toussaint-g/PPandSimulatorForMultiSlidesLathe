@@ -84,7 +84,8 @@ class IsoWriter:
 
 
     def linear_move(self, tool_number: int, motion_mode: MotionMode, cutcom_mode: ToolComp, feedrate_value: float,
-                    feedrate_unit: Optional[FeedrateUnit], position_x=None, position_y=None, position_z=None) -> None:
+                    feedrate_unit: Optional[FeedrateUnit], position_x=None, position_y=None, position_z=None,
+                    position_c=None) -> None:
         """Gere les mouvements lineaires en emettant le code de mouvement approprie et les coordonnees qui ont change."""
         motion_code = self.machine.rapid_move_code if motion_mode == MotionMode.RAPID else self.machine.linear_move_code
         axis_words = [motion_code]
@@ -105,6 +106,9 @@ class IsoWriter:
         if position_z is not None:
             axis_words.append(f"Z{format_float_to_iso(position_z)}")
             self.emission_state.last_z_position = position_z
+        if position_c is not None:
+            axis_words.append(f"C{format_float_to_iso(position_c)}")
+            self.emission_state.last_c_position = position_c
 
         # Si l'unite d'avance a change, on l'ajoute a la ligne de mouvement.
         if self.emission_state.last_feedrate_unit != feedrate_unit:

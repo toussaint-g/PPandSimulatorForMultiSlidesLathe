@@ -455,7 +455,7 @@ class VtkFunctions:
         return output_polydata
 
     def apply_c_rotation_to_polydata(self, polydata, array_name="C_angle_deg"):
-        """Applique une rotation XY point par point selon le tag C stocke en degres."""
+        """Reconstruit la position visualisee en appliquant C aux coordonnees XY."""
         output_polydata = vtk.vtkPolyData()
         output_polydata.DeepCopy(polydata)
 
@@ -473,7 +473,7 @@ class VtkFunctions:
         for i in range(num_points):
             x_value, y_value, z_value = output_polydata.GetPoint(i)
             c_value = c_array.GetValue(i)
-            c_rad = math.radians(-c_value)
+            c_rad = math.radians(c_value)
             x_rotated = x_value * math.cos(c_rad) - y_value * math.sin(c_rad)
             y_rotated = x_value * math.sin(c_rad) + y_value * math.cos(c_rad)
             rotated_points.SetPoint(i, x_rotated, y_rotated, z_value)

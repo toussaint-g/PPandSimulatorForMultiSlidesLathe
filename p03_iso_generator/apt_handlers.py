@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from functools import partial
 from typing import Callable
 
@@ -14,6 +15,57 @@ from p03_iso_generator.tlon import emit_tlon_arc, emit_tlon_not_supported, parse
 
 
 Handler = Callable[[str, str, WriterState, IsoWriter], None]
+
+
+def _normalize_angle_0_360(angle_degrees: float) -> float:
+    """Normalise un angle en degres dans l'intervalle [0, 360[."""
+    return angle_degrees % 360.0
+
+
+def _vector_xy_angle_degrees(vector_i: float, vector_j: float) -> float:
+    """Retourne l'angle XY d'un vecteur par rapport a +X."""
+    return math.degrees(math.atan2(vector_j, vector_i))
+
+
+def _get_tool_k_vector(state: WriterState, iso_writer: IsoWriter) -> tuple[float, float, float]:
+    """Retourne le ktoolvector de l'outil courant."""
+    tool_config = iso_writer.machine.get_required_tool_config(state.tool_number)
+    tool_vector = tool_config.get("ktoolvector")
+    if not isinstance(tool_vector, (list, tuple)) or len(tool_vector) != 3:
+        raise ValueError(f"MachineConfigError: ktoolvector absent ou invalide pour l'outil {state.tool_number}")
+    return float(tool_vector[0]), float(tool_vector[1]), float(tool_vector[2])
+
+
+def _compute_c_axis_from_ijk(
+    apt_i: float,
+    apt_j: float,
+    apt_k: float,
+    tool_i: float,
+    tool_j: float,
+    tolerance: float,
+) -> float | None:
+    """Calcule C depuis le vecteur APT, relativement au ktoolvector courant."""
+    apt_has_xy_component = abs(apt_i) > tolerance or abs(apt_j) > tolerance
+    apt_has_z_component = abs(apt_k) > tolerance
+
+    if not apt_has_xy_component:
+        return 0.0
+    if apt_has_z_component:
+        return None
+    if abs(tool_i) <= tolerance and abs(tool_j) <= tolerance:
+        return None
+
+    apt_angle = _vector_xy_angle_degrees(apt_i, apt_j)
+    tool_angle = _vector_xy_angle_degrees(tool_i, tool_j)
+    return _normalize_angle_0_360(apt_angle - tool_angle)
+
+
+def _rotate_coordinates_around_z(position_x: float, position_y: float, position_z: float, angle_degrees: float) -> tuple[float, float, float]:
+    """Applique une rotation aux coordonnees APT dans le plan XY."""
+    angle_radians = math.radians(angle_degrees)
+    rotated_x = position_x * math.cos(angle_radians) - position_y * math.sin(angle_radians)
+    rotated_y = position_x * math.sin(angle_radians) + position_y * math.cos(angle_radians)
+    return rotated_x, rotated_y, position_z
 
 
 def h_comment(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter, text_info: str | None = None) -> None:
@@ -120,17 +172,43 @@ def h_feedrat(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
 
 def h_goto(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Deplace la machine selon le mode specifie et les coordonnees fournies."""
-    # Exemple accepte : GOTO/100,200,300
+    # Exemple accepte : GOTO/100,200,300, 0, 0, 1
     coordinates = csv_floats(argument_text)
     new_x_value = coordinates[0]
     new_y_value = coordinates[1]
     new_z_value = coordinates[2]
+    new_i_value = coordinates[3]
+    new_j_value = coordinates[4]
+    new_k_value = coordinates[5]
 
     # Utilise une tolerance pour eviter les reemissions dues aux petites variations flottantes.
     tolerance = float(iso_writer.machine.calculation_tolerance)
     x_out = None
     y_out = None
     z_out = None
+    c_out = None
+
+    tool_i_value, tool_j_value, _tool_k_value = _get_tool_k_vector(state, iso_writer)
+    new_c_value = _compute_c_axis_from_ijk(
+        new_i_value,
+        new_j_value,
+        new_k_value,
+        tool_i_value,
+        tool_j_value,
+        tolerance,
+    )
+    if new_c_value is None:
+        iso_writer.comment(
+            "ERREUR: VECTEUR IJK INACCESSIBLE AVEC AXE C SEUL "
+            f"I{new_i_value} J{new_j_value} K{new_k_value}"
+        )
+        return
+    new_x_value, new_y_value, new_z_value = _rotate_coordinates_around_z(
+        new_x_value,
+        new_y_value,
+        new_z_value,
+        -new_c_value,
+    )
 
     # On filtre les petites variations numeriques issues de l'APT afin de ne
     # pas reemettre des blocs ISO pour des ecarts purement flottants.
@@ -144,12 +222,15 @@ def h_goto(apt_keyword: str, argument_text: str, state: WriterState, iso_writer:
     if abs(new_z_value - state.position_z) > tolerance:
         state.position_z = new_z_value
         z_out = new_z_value
+    if abs(new_c_value - state.position_c) > tolerance:
+        state.position_c = new_c_value
+        c_out = new_c_value
 
     # N'emet la ligne de deplacement que si au moins un axe change.
-    if x_out is not None or y_out is not None or z_out is not None:
+    if x_out is not None or y_out is not None or z_out is not None or c_out is not None:
         iso_writer.linear_move(state.tool_number, state.motion_mode, state.toolComp_mode, state.feedrate_value,
-                               state.feedrate_unit, position_x=x_out, position_y=y_out, position_z=z_out)
-
+                               state.feedrate_unit, position_x=x_out, position_y=y_out, position_z=z_out,
+                               position_c=c_out)
 
 def h_cutcom(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Met a jour le mode de compensation d'outil et emet les lignes ISO correspondantes si necessaire."""
