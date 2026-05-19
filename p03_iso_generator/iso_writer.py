@@ -140,9 +140,10 @@ class IsoWriter:
 
         axis_words.append(motion_code)
 
-        start_x = self.emission_state.last_x_position if self.emission_state.last_x_position is not None else self.machine.home_tool_x
-        start_y = self.emission_state.last_y_position if self.emission_state.last_y_position is not None else self.machine.home_tool_y
-        start_z = self.emission_state.last_z_position if self.emission_state.last_z_position is not None else self.machine.home_tool_z
+        initial_home_x, initial_home_y, initial_home_z = self.machine.get_initial_home_tool()
+        start_x = self.emission_state.last_x_position if self.emission_state.last_x_position is not None else initial_home_x
+        start_y = self.emission_state.last_y_position if self.emission_state.last_y_position is not None else initial_home_y
+        start_z = self.emission_state.last_z_position if self.emission_state.last_z_position is not None else initial_home_z
 
         if position_x is not None:
             x_to_emit = position_x * 2 if self.machine.x_diameter else position_x

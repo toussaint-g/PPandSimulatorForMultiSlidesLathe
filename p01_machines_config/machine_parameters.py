@@ -83,9 +83,7 @@ class MachineParameters:
     xy_work_plane_code: str
     xz_work_plane_code: str
     yz_work_plane_code: str
-    home_tool_x: float
-    home_tool_y: float
-    home_tool_z: float
+    channel_home_tool: tuple[float, float, float] | None
     channel_tools: list[JsonDict]
     ipartvector: list[float] | None
     jpartvector: list[float] | None
@@ -104,6 +102,25 @@ class MachineParameters:
         if tool_config is None:
             raise ValueError(f"MachineConfigError: outil {tool_number} introuvable dans le canal {self.channel_name}")
         return tool_config
+
+    def get_tool_home_tool(self, tool_number: int) -> tuple[float, float, float]:
+        """Retourne les coordonnees home tool declarees pour un outil."""
+        tool_config = self.get_required_tool_config(tool_number)
+        if "hometool" in tool_config:
+            return _extract_home_tool_coordinates(tool_config["hometool"])
+        if self.channel_home_tool is not None:
+            return self.channel_home_tool
+        raise ValueError(f"MachineConfigError: hometool absent pour l'outil {tool_number}")
+
+    def get_initial_home_tool(self) -> tuple[float, float, float]:
+        """Retourne une position home tool initiale tant qu'aucun outil n'est actif."""
+        if self.channel_home_tool is not None:
+            return self.channel_home_tool
+        if self.channel_tools:
+            first_tool_number = self.channel_tools[0].get("toolnumber")
+            if isinstance(first_tool_number, int):
+                return self.get_tool_home_tool(first_tool_number)
+        return 0.0, 0.0, 0.0
 
     def get_spindle_code_for_tool(self, tool_number: int, spindle_direction: SpindleDirection | None = None) -> str:
         """Retourne le code ISO de broche associe a l'outil et au sens demandes."""
@@ -184,10 +201,11 @@ class MachineParameters:
             machine_informations: JsonDict = machine_config["machineinformations"]  # type: ignore[assignment]
             channels_list: JsonDict = machine_config["channelslist"]  # type: ignore[assignment]
             channel_config: JsonDict = channels_list[channel_name]  # type: ignore[index]
-            home_tool_x, home_tool_y, home_tool_z = _extract_home_tool_coordinates(channel_config["hometool"])
-            # x_diameter = machine_informations["xdiameter"]
-            # if x_diameter:
-            #     home_tool_x = home_tool_x / 2
+            channel_home_tool = (
+                _extract_home_tool_coordinates(channel_config["hometool"])
+                if "hometool" in channel_config
+                else None
+            )
 
             coolant_start_code = machine_informations.get("coolantstart")
             coolant_stop_code = machine_informations.get("coolantstop")
@@ -218,9 +236,7 @@ class MachineParameters:
                 xy_work_plane_code=normalize_gm_code(machine_informations["xyworkplane"]),
                 xz_work_plane_code=normalize_gm_code(machine_informations["xzworkplane"]),
                 yz_work_plane_code=normalize_gm_code(machine_informations["yzworkplane"]),
-                home_tool_x=home_tool_x,
-                home_tool_y=home_tool_y,
-                home_tool_z=home_tool_z,
+                channel_home_tool=channel_home_tool,
                 channel_tools=channel_config["listoftools"],
                 ipartvector=machine_informations.get("ipartvector"),
                 jpartvector=machine_informations.get("jpartvector"),

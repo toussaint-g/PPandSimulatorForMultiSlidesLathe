@@ -231,7 +231,7 @@ class ToolPathInterpreter:
                 current_tool)
 
         # Initialisation previous point
-        #previous_point = [self.machine.home_tool_x, self.machine.home_tool_y, self.machine.home_tool_z]
+        #previous_point = list(self.machine.get_tool_home_tool(current_tool))
 
         # Lecture datas
         for current_line in list_datas:
@@ -272,7 +272,7 @@ class ToolPathInterpreter:
                 current_tool = current_line.tool_number
 
                 # Initialisation du point hometool
-                #previous_point = [self.machine.home_tool_x, self.machine.home_tool_y, self.machine.home_tool_z]
+                #previous_point = list(self.machine.get_tool_home_tool(current_tool))
 
             # Si ligne avec outil courant
             if current_line.tool_number != 0:

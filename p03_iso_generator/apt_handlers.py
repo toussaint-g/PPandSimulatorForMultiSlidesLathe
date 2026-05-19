@@ -127,9 +127,7 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
 
     # Apres un changement d'outil, on suppose que la machine revient a la
     # position de reference de l'outil pour eviter les deplacements rapides inattendus.
-    state.position_x = iso_writer.machine.home_tool_x
-    state.position_y = iso_writer.machine.home_tool_y
-    state.position_z = iso_writer.machine.home_tool_z
+    state.position_x, state.position_y, state.position_z = iso_writer.machine.get_tool_home_tool(state.tool_number)
     iso_writer.tool_change(state.tool_number, state.tool_comment, state.position_x, state.position_y, state.position_z)
 
 
