@@ -33,7 +33,23 @@ def _get_tool_k_vector(state: WriterState, iso_writer: IsoWriter) -> tuple[float
     tool_vector = tool_config.get("ktoolvector")
     if not isinstance(tool_vector, (list, tuple)) or len(tool_vector) != 3:
         raise ValueError(f"MachineConfigError: ktoolvector absent ou invalide pour l'outil {state.tool_number}")
-    return float(tool_vector[0]), float(tool_vector[1]), float(tool_vector[2])
+    tool_i = float(tool_vector[0])
+    tool_j = float(tool_vector[1])
+    tool_k = float(tool_vector[2])
+    if (tool_i, tool_j, tool_k) in ((0.0, 1.0, 0.0), (0.0, -1.0, 0.0)):
+        raise ValueError(f"MachineConfigError: ktoolvector aligne sur Y non supporte pour l'outil {state.tool_number}")
+    return tool_i, tool_j, tool_k
+
+
+def _is_milling_tool(state: WriterState, iso_writer: IsoWriter) -> bool:
+    """Retourne True si l'outil courant est declare en fraisage dans la config machine."""
+    tool_config = iso_writer.machine.get_required_tool_config(state.tool_number)
+    tool_type = tool_config.get("tooltype")
+    if tool_type == 1:
+        return True
+    if tool_type == 0:
+        return False
+    raise ValueError(f"MachineConfigError: tooltype invalide pour l'outil {state.tool_number}")
 
 
 def _compute_c_axis_from_ijk(
@@ -127,7 +143,9 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
 
     # Apres un changement d'outil, on suppose que la machine revient a la
     # position de reference de l'outil pour eviter les deplacements rapides inattendus.
-    state.position_x, state.position_y, state.position_z = iso_writer.machine.get_tool_home_tool(state.tool_number)
+    state.position_x, state.position_y, state.position_z = iso_writer.machine.get_tool_change_point_for_c_axis(
+        state.position_c,
+    )
     iso_writer.tool_change(state.tool_number, state.tool_comment, state.position_x, state.position_y, state.position_z)
 
 
@@ -186,27 +204,30 @@ def h_goto(apt_keyword: str, argument_text: str, state: WriterState, iso_writer:
     z_out = None
     c_out = None
 
-    tool_i_value, tool_j_value, _tool_k_value = _get_tool_k_vector(state, iso_writer)
-    new_c_value = _compute_c_axis_from_ijk(
-        new_i_value,
-        new_j_value,
-        new_k_value,
-        tool_i_value,
-        tool_j_value,
-        tolerance,
-    )
-    if new_c_value is None:
-        iso_writer.comment(
-            "ERREUR: VECTEUR IJK INACCESSIBLE AVEC AXE C SEUL "
-            f"I{new_i_value} J{new_j_value} K{new_k_value}"
+    if _is_milling_tool(state, iso_writer):
+        tool_i_value, tool_j_value, _tool_k_value = _get_tool_k_vector(state, iso_writer)
+        new_c_value = _compute_c_axis_from_ijk(
+            new_i_value,
+            new_j_value,
+            new_k_value,
+            tool_i_value,
+            tool_j_value,
+            tolerance,
         )
-        return
-    new_x_value, new_y_value, new_z_value = _rotate_coordinates_around_z(
-        new_x_value,
-        new_y_value,
-        new_z_value,
-        -new_c_value,
-    )
+        if new_c_value is None:
+            iso_writer.comment(
+                "ERREUR: VECTEUR IJK INACCESSIBLE AVEC AXE C SEUL "
+                f"I{new_i_value} J{new_j_value} K{new_k_value}"
+            )
+            return
+        new_x_value, new_y_value, new_z_value = _rotate_coordinates_around_z(
+            new_x_value,
+            new_y_value,
+            new_z_value,
+            -new_c_value,
+        )
+    else:
+        new_c_value = 0.0
 
     # On filtre les petites variations numeriques issues de l'APT afin de ne
     # pas reemettre des blocs ISO pour des ecarts purement flottants.

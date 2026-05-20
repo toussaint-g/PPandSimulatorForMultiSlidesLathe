@@ -18,23 +18,17 @@ class ToolPathInterpreter:
         self.machine = MachineParameters.from_config(machine_config, channel_name)
         self.part_thickness = part_thickness
 
-    def get_polydata_symmetry_plane_vectors(self, tool_number):
-        """Retourne les axes de symetrie demandes par la configuration outil."""
+    def get_polydata_xmirrorfortoolpath_vector(self, tool_number):
+        """Retourne le vecteur de symetrie X demande par la configuration outil."""
         tool_config = self.machine.get_required_tool_config(tool_number)
-        symmetry_plane_vectors = []
 
-        xmirror = tool_config.get("xmirror", False)
-        ymirror = tool_config.get("ymirror", False)
-        if not isinstance(xmirror, bool):
-            raise ValueError(f"MachineConfigError: xmirror invalide pour l'outil {tool_number}")
-        if not isinstance(ymirror, bool):
-            raise ValueError(f"MachineConfigError: ymirror invalide pour l'outil {tool_number}")
+        xmirrorfortoolpath = tool_config.get("xmirrorfortoolpath", False)
+        if not isinstance(xmirrorfortoolpath, bool):
+            raise ValueError(f"MachineConfigError: xmirrorfortoolpath invalide pour l'outil {tool_number}")
 
-        if xmirror:
-            symmetry_plane_vectors.append({"name": "xmirror", "vector": [1, 0, 0]})
-        if ymirror:
-            symmetry_plane_vectors.append({"name": "ymirror", "vector": [0, 1, 0]})
-        return symmetry_plane_vectors
+        if xmirrorfortoolpath:
+            return [1, 0, 0]
+        return None
 
     def analyze(self, list_datas, resolution_cercle):
         """Cette methode recupere les donnees utiles a la construction des trajectoires"""
@@ -212,11 +206,12 @@ class ToolPathInterpreter:
             )
             poly_data_toolpath = obj_vtk_functions.apply_c_rotation_to_polydata(poly_data_toolpath)
 
-            # Application symetrie polydata si necessaire
-            for symmetry_plane_vector in self.get_polydata_symmetry_plane_vectors(current_tool):
+            # Application symetrie X polydata si necessaire
+            xmirror_vector = self.get_polydata_xmirrorfortoolpath_vector(current_tool)
+            if xmirror_vector is not None:
                 poly_data_toolpath = obj_vtk_functions.apply_symmetry_to_polydata(
                     poly_data_toolpath,
-                    symmetry_plane_vector["vector"])
+                    xmirror_vector)
 
             # Application decalage en Z si epaisseur piece renseignee
             if self.part_thickness != 0:
@@ -230,19 +225,22 @@ class ToolPathInterpreter:
                 actors,
                 current_tool)
 
-        # Initialisation previous point
-        #previous_point = list(self.machine.get_tool_home_tool(current_tool))
+        def build_tool_change_point(position_c):
+            """Construit le point de depart outil selon le point de changement outil et C courant."""
+            tool_change_x, tool_change_y, tool_change_z = self.machine.get_tool_change_point_for_c_axis(
+                position_c,
+            )
+            return [tool_change_x, tool_change_y, tool_change_z, float(position_c)]
 
         # Lecture datas
         for current_line in list_datas:
 
             # Si num outil de la ligne courante <> 0 et le courant = 0
             if current_line.tool_number != 0 and current_tool == 0:
-                
-                previous_point = [current_line.endpoint_x, current_line.endpoint_y, current_line.endpoint_z]
 
                 # Val outil courant
                 current_tool = current_line.tool_number
+                previous_point = build_tool_change_point(current_line.endpoint_c)
 
                 # Def structures points et lignes
                 points_toolpath = vtk.vtkPoints()
@@ -266,13 +264,9 @@ class ToolPathInterpreter:
                 current_polyline_c_values = []
                 current_move_group_type = None
 
-                previous_point = [current_line.endpoint_x, current_line.endpoint_y, current_line.endpoint_z]
-
                 # Val outil courant
                 current_tool = current_line.tool_number
-
-                # Initialisation du point hometool
-                #previous_point = list(self.machine.get_tool_home_tool(current_tool))
+                previous_point = build_tool_change_point(current_line.endpoint_c)
 
             # Si ligne avec outil courant
             if current_line.tool_number != 0:
@@ -360,20 +354,14 @@ class VtkFunctions:
         pass
 
     def apply_symmetry_to_polydata(self, polydata, plane_vector):
-        """Applique une symetrie a un vtkPolyData selon le plan donne."""
+        """Applique une symetrie X a un vtkPolyData."""
         axis = [abs(value) for value in plane_vector]
 
-        if axis == [1, 0, 0]:
-            scale = (-1, 1, 1)
-        elif axis == [0, 1, 0]:
-            scale = (1, -1, 1)
-        elif axis == [0, 0, 1]:
-            scale = (1, 1, -1)
-        else:
+        if axis != [1, 0, 0]:
             raise ValueError("SymmetryError: vecteur de plan non supporte")
 
         transform = vtk.vtkTransform()
-        transform.Scale(scale[0], scale[1], scale[2])
+        transform.Scale(-1, 1, 1)
 
         transform_filter = vtk.vtkTransformPolyDataFilter()
         transform_filter.SetTransform(transform)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
+import math
 from typing import TypeAlias
 from p01_machines_config.machine_enums import SpindleDirection, ToolComp
 
@@ -43,15 +44,12 @@ def _normalize_axis_vector(workplane_vector: object) -> tuple[float, float, floa
     raise ValueError("MachineConfigError: vecteur workplane non supporte")
 
 
-def _extract_home_tool_coordinates(home_tool: object) -> tuple[float, float, float]:
-    """Extrait les coordonnees home tool depuis une liste [x, y, z]."""
-    if isinstance(home_tool, (list, tuple)) and len(home_tool) == 3:
-        try:
-            return float(home_tool[0]), float(home_tool[1]), float(home_tool[2])
-        except (TypeError, ValueError):
-            raise ValueError("MachineConfigError: hometool invalide")
-
-    raise ValueError("MachineConfigError: hometool invalide")
+def _extract_tool_change_point_x_for_t0(tool_change_point_x: object) -> float:
+    """Extrait la coordonnee X du point de changement outil T0."""
+    try:
+        return float(tool_change_point_x)
+    except (TypeError, ValueError):
+        raise ValueError("MachineConfigError: toolchangepointxforT0 invalide")
 
 
 @dataclass
@@ -83,7 +81,7 @@ class MachineParameters:
     xy_work_plane_code: str
     xz_work_plane_code: str
     yz_work_plane_code: str
-    channel_home_tool: tuple[float, float, float] | None
+    channel_tool_change_point_x_for_t0: float
     channel_tools: list[JsonDict]
     ipartvector: list[float] | None
     jpartvector: list[float] | None
@@ -103,24 +101,19 @@ class MachineParameters:
             raise ValueError(f"MachineConfigError: outil {tool_number} introuvable dans le canal {self.channel_name}")
         return tool_config
 
-    def get_tool_home_tool(self, tool_number: int) -> tuple[float, float, float]:
-        """Retourne les coordonnees home tool declarees pour un outil."""
-        tool_config = self.get_required_tool_config(tool_number)
-        if "hometool" in tool_config:
-            return _extract_home_tool_coordinates(tool_config["hometool"])
-        if self.channel_home_tool is not None:
-            return self.channel_home_tool
-        raise ValueError(f"MachineConfigError: hometool absent pour l'outil {tool_number}")
+    def get_tool_change_point_for_c_axis(self, position_c: float) -> tuple[float, float, float]:
+        """Retourne le point de changement outil transforme dans le repere machine selon C."""
+        tool_change_x = self.channel_tool_change_point_x_for_t0
+        tool_change_y = 0.0
+        tool_change_z = 0.0
+        angle_radians = math.radians(-float(position_c))
+        tool_change_x_for_c = tool_change_x * math.cos(angle_radians) - tool_change_y * math.sin(angle_radians)
+        tool_change_y_for_c = tool_change_x * math.sin(angle_radians) + tool_change_y * math.cos(angle_radians)
+        return tool_change_x_for_c, tool_change_y_for_c, tool_change_z
 
-    def get_initial_home_tool(self) -> tuple[float, float, float]:
-        """Retourne une position home tool initiale tant qu'aucun outil n'est actif."""
-        if self.channel_home_tool is not None:
-            return self.channel_home_tool
-        if self.channel_tools:
-            first_tool_number = self.channel_tools[0].get("toolnumber")
-            if isinstance(first_tool_number, int):
-                return self.get_tool_home_tool(first_tool_number)
-        return 0.0, 0.0, 0.0
+    def get_initial_tool_change_point(self) -> tuple[float, float, float]:
+        """Retourne le point de changement outil initial tant qu'aucun outil n'est actif."""
+        return self.channel_tool_change_point_x_for_t0, 0.0, 0.0
 
     def get_spindle_code_for_tool(self, tool_number: int, spindle_direction: SpindleDirection | None = None) -> str:
         """Retourne le code ISO de broche associe a l'outil et au sens demandes."""
@@ -201,10 +194,8 @@ class MachineParameters:
             machine_informations: JsonDict = machine_config["machineinformations"]  # type: ignore[assignment]
             channels_list: JsonDict = machine_config["channelslist"]  # type: ignore[assignment]
             channel_config: JsonDict = channels_list[channel_name]  # type: ignore[index]
-            channel_home_tool = (
-                _extract_home_tool_coordinates(channel_config["hometool"])
-                if "hometool" in channel_config
-                else None
+            channel_tool_change_point_x_for_t0 = _extract_tool_change_point_x_for_t0(
+                channel_config["toolchangepointxforT0"]
             )
 
             coolant_start_code = machine_informations.get("coolantstart")
@@ -236,7 +227,7 @@ class MachineParameters:
                 xy_work_plane_code=normalize_gm_code(machine_informations["xyworkplane"]),
                 xz_work_plane_code=normalize_gm_code(machine_informations["xzworkplane"]),
                 yz_work_plane_code=normalize_gm_code(machine_informations["yzworkplane"]),
-                channel_home_tool=channel_home_tool,
+                channel_tool_change_point_x_for_t0=channel_tool_change_point_x_for_t0,
                 channel_tools=channel_config["listoftools"],
                 ipartvector=machine_informations.get("ipartvector"),
                 jpartvector=machine_informations.get("jpartvector"),

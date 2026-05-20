@@ -35,9 +35,9 @@ class IsoInterpreter:
             self.machine.yz_work_plane_code,
         )
 
-    def _get_home_tool_position(self, tool_number: int) -> tuple[float, float, float]:
-        """Retourne la position home tool de l'outil dans le repere piece de l'analyseur."""
-        return self.machine.get_tool_home_tool(tool_number)
+    def _get_tool_change_point_position(self, position_c: float) -> tuple[float, float, float]:
+        """Retourne le point de changement outil selon l'angle C courant."""
+        return self.machine.get_tool_change_point_for_c_axis(position_c)
 
     def analyze(self, path):
         """Cette methode vient extraire les donnees utiles de chaque ligne du GCode et les stocker dans une liste d'objet"""
@@ -144,13 +144,13 @@ class IsoInterpreter:
                 if match_tool:
                     tool = int(match_tool.group(1))
                     tool_offset = int(match_tool.group(2))
-                    # Lors d'un changement d'outil, l'analyse repart de la position home tool
-                    # de l'outil et du plan de travail declare sur l'outil dans la config machine.
+                    # Lors d'un changement d'outil, l'analyse repart du point de changement outil
+                    # et du plan de travail declare sur l'outil dans la config machine.
                     work_plane = self.work_plane_by_code[self.machine.get_tool_work_plane_code(tool)]
-                    home_tool_x, home_tool_y, home_tool_z = self._get_home_tool_position(tool)
-                    position_x = home_tool_x
-                    position_y = home_tool_y
-                    position_z = home_tool_z
+                    tool_change_x, tool_change_y, tool_change_z = self._get_tool_change_point_position(position_c)
+                    position_x = tool_change_x
+                    position_y = tool_change_y
+                    position_z = tool_change_z
                     if obj_modal.tool == 0:
                         obj_modal.position_x = position_x
                         obj_modal.position_y = position_y
@@ -363,7 +363,7 @@ class Modal:
         self.tool = 0
         self.tool_offset = 0
         self.radius = 0.0
-        self.position_x, self.position_y, self.position_z = self.machine.get_initial_home_tool()
+        self.position_x, self.position_y, self.position_z = self.machine.get_initial_tool_change_point()
         self.position_c = 0.0
         self.work_plane = None
 

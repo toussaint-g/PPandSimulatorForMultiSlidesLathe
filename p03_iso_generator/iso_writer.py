@@ -61,9 +61,15 @@ class IsoWriter:
 
     def tool_change(self, tool_number: int, tool_comment: str, position_x: float, position_y: float, position_z: float) -> None:
         """Emet les lignes ISO pour un changement d'outil, en fonction du type d'outil et de l'etat de la broche."""
+        axis_words = [self.machine.rapid_move_code, f"{self.machine.toolname_prefix}0"]
         x_to_emit = position_x * 2 if self.machine.x_diameter else position_x
+        axis_words.append(f"X{format_float_to_iso(x_to_emit)}")
+        axis_words.append(f"Y{format_float_to_iso(position_y)}")
+        axis_words.append(f"Z{format_float_to_iso(position_z)}")
         self.emission_state.last_x_position = position_x
-        self.emit(f"{self.machine.rapid_move_code} {self.machine.toolname_prefix}0 X{format_float_to_iso(x_to_emit)} (DEGAGEMENT OUTIL)")
+        self.emission_state.last_y_position = position_y
+        self.emission_state.last_z_position = position_z
+        self.emit(f"{' '.join(axis_words)} (DEGAGEMENT OUTIL)")
         self.emit(f"({self.machine.toolname_prefix}{tool_number:02d}{tool_number:02d} - {tool_comment})")
         self.emit(f"{self.machine.toolname_prefix}{tool_number:02d}{tool_number:02d}")
 
@@ -140,10 +146,10 @@ class IsoWriter:
 
         axis_words.append(motion_code)
 
-        initial_home_x, initial_home_y, initial_home_z = self.machine.get_initial_home_tool()
-        start_x = self.emission_state.last_x_position if self.emission_state.last_x_position is not None else initial_home_x
-        start_y = self.emission_state.last_y_position if self.emission_state.last_y_position is not None else initial_home_y
-        start_z = self.emission_state.last_z_position if self.emission_state.last_z_position is not None else initial_home_z
+        initial_tool_change_x, initial_tool_change_y, initial_tool_change_z = self.machine.get_initial_tool_change_point()
+        start_x = self.emission_state.last_x_position if self.emission_state.last_x_position is not None else initial_tool_change_x
+        start_y = self.emission_state.last_y_position if self.emission_state.last_y_position is not None else initial_tool_change_y
+        start_z = self.emission_state.last_z_position if self.emission_state.last_z_position is not None else initial_tool_change_z
 
         if position_x is not None:
             x_to_emit = position_x * 2 if self.machine.x_diameter else position_x
