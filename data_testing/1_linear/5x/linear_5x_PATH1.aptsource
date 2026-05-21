@@ -1,5 +1,5 @@
 $$ -----------------------------------------------------------------
-$$     Généré le Thursday, 21 May 2026 09:59:21
+$$     Généré le Thursday, 21 May 2026 15:36:53
 $$     CATIA APT VERSION 1.0
 $$ -----------------------------------------------------------------
 CHANNEL,1
@@ -21,8 +21,8 @@ MACHINE/Tsugami BW128
 CATPROCESS/Model_BW128.CATProcess
 CATPRODUCT/570350435
 MAXRPM/ 5000.000000
-$$ OPERATION NAME : Changement outil.46
-$$  Début de génération de: Changement outil.46
+$$ OPERATION NAME : Changement outil.64
+$$  Début de génération de: Changement outil.64
 MULTAX/ON
 $$ TOOLCHANGEBEGINNING
 CUTTER/  1.000000,  0.000000,  0.500000,  0.000000,  0.000000,$
@@ -34,8 +34,8 @@ ANGLE,,PITCH,,CORE,    0.000000
 LOADTL/5,ADJUST,1,SPINDL,15000.000000,MILL
 $$ COOLNT/
 $$ TOOLCHANGEEND
-$$  Fin de génération de: Changement outil.46
-OP_NAME/Contournage periph - PATH1 - BROCHE Frontale
+$$  Fin de génération de: Changement outil.64
+OP_NAME/Contournage periph - BROCHE Frontale
 START_OP/MILL
 SPINDL_NAME/NAME,BP_PATH1,NUMB,1
 OPDATA/ACCURACY,    0.005000,OFFSET,    0.000000,    0.000000,$
@@ -50,8 +50,8 @@ DEC_XY,,,,DEC_POL,,,DEC_Z,,LF,$
 DYN_DIR,,DYN_RAD,,DYN_ANG,,LF,$
 PASSE_N,,STEP,,RATIO_F,,VIDE,,SUREP,,LF,$
 TEMPO,,LF
-$$ OPERATION NAME : Contournage periph - PATH1 - BROCHE Frontale
-$$  Début de génération de: Contournage periph - PATH1 - BROCHE Frontale
+$$ OPERATION NAME : Contournage periph - BROCHE Frontale
+$$  Début de génération de: Contournage periph - BROCHE Frontale
 TOOLPATH_TYPE/3AXIS
 TLCOMP/5,ADJUST,1
 SPINDL/15000.0000,RPM,CLW
@@ -114,10 +114,101 @@ GOTO  /   -0.03910,    0.00000,    0.80000, 0.000000, 0.000000,-1.000000
 GOTO  /   -0.03910,    0.00000,    0.30000, 0.000000, 0.000000,-1.000000
 RAPID
 GOTO  /   -0.03910,    0.00000,   -4.70000, 0.000000, 0.000000,-1.000000
-$$  Fin de génération de: Contournage periph - PATH1 - BROCHE Frontale
+$$  Fin de génération de: Contournage periph - BROCHE Frontale
 END_OP/MILL
-$$ OPERATION NAME : Changement outil.48
-$$  Début de génération de: Changement outil.48
+$$ OPERATION NAME : Changement outil tournage.50
+$$  Début de génération de: Changement outil tournage.50
+$$ TOOLCHANGEBEGINNING
+CUTTER/    0.000000
+TPRINT/Porte-plaquette extérieur - PATH1 - EB
+TDATA/TURN,    0.000000,    0.000000,    0.000000,QUADRANT,,RADIUS,    $
+0.000000,$
+TYPE,MfgExternalTool,WEIGHT,,INV,0,ANGLE,    0.000000
+LOADTL/1,ADJUST,,TURN
+$$ COOLNT/
+$$ TOOLCHANGEEND
+$$  Fin de génération de: Changement outil tournage.50
+OP_NAME/G3 - EB
+START_OP/LATHE
+SPINDL_NAME/NAME,BP_PATH1,NUMB,1
+OPDATA/ACCURACY,    0.010000,TYPE,Finition de profil en tournage,$
+MMPR,FEED_MACH,    0.150000,FEED_RTRCT,    0.600000,FEED_APP,    0.3200$
+00,$
+FEED_FINISH,
+OP_FEED/UNIT,MMPR,APPROACH,    0.320000,MACHINING,    0.150000,RETRACT,$
+    0.600000,$
+FINISH,
+OP_MEUL/TYPE,,INDEX,,OSCIL_X,,OSCIL_Y,,OSCIL_Z,,LF,$
+USURE,,USURE_ADD,,LF,$
+DEC_XY,,,,DEC_POL,,,DEC_Z,,LF,$
+DYN_DIR,,DYN_RAD,,DYN_ANG,,LF,$
+PASSE_N,,STEP,,RATIO_F,,VIDE,,SUREP,,LF
+$$ TOOLPATH_TYPE/TURN
+$$ OPERATION NAME : G3 - EB
+$$  Début de génération de: G3 - EB
+SWITCH/9,9
+FEDRAT/    0.3200,MMPR
+SPINDL/60000.0000,RPM,CLW
+GOTO  /    4.80711,    0.00000,    4.70711, 0.000000, 1.000000, 0.000000
+GOTO  /    4.10000,    0.00000,    4.00000, 0.000000, 1.000000, 0.000000
+FEDRAT/    0.1500,MMPR
+GOTO  /    4.10000,    0.00000,    2.00000, 0.000000, 1.000000, 0.000000
+INTOL /    0.01000
+OUTTOL/    0.00000
+PSIS/(PLANE/(POINT/    2.00000,    0.00000,    2.00000),PERPTO,$
+            (VECTOR/ 0.000000, 1.000000, 0.000000))
+INDIRV/    0.00000,    0.00000,   -1.00000
+TLON,GOFWD/(CYLNDR/    2.00000,    0.00000,    2.00000,$
+       0.00000,    1.00000,    0.00000,    2.10000),ON,$
+   (PLANE/PERPTO,$
+      (PLANE/(POINT/    2.00000,    0.00000,    2.00000),PERPTO,$
+      (VECTOR/ 0.000000, 1.000000, 0.000000)),$
+      (POINT/    2.00000,    0.00000,    2.00000),$
+      (POINT/    2.00000,    0.00000,   -0.10000))
+GOTO  /    0.00000,    0.00000,   -0.10000, 0.000000, 1.000000, 0.000000
+FEDRAT/    0.6000,MMPR
+GOTO  /   -0.70711,    0.00000,   -0.80711, 0.000000, 1.000000, 0.000000
+SYNC/,,,
+$$  Fin de génération de: G3 - EB
+END_OP/LATHE
+OP_NAME/G2 - EB
+START_OP/LATHE
+SPINDL_NAME/NAME,BP_PATH1,NUMB,1
+OPDATA/ACCURACY,    0.010000,TYPE,Finition de profil en tournage,$
+MMPR,FEED_MACH,    0.250000,FEED_RTRCT,    0.500000,FEED_APP,    0.3000$
+00,$
+FEED_FINISH,
+OP_FEED/UNIT,MMPR,APPROACH,    0.300000,MACHINING,    0.250000,RETRACT,$
+    0.500000,$
+FINISH,
+OP_MEUL/TYPE,,INDEX,,OSCIL_X,,OSCIL_Y,,OSCIL_Z,,LF,$
+USURE,,USURE_ADD,,LF,$
+DEC_XY,,,,DEC_POL,,,DEC_Z,,LF,$
+DYN_DIR,,DYN_RAD,,DYN_ANG,,LF,$
+PASSE_N,,STEP,,RATIO_F,,VIDE,,SUREP,,LF
+$$ TOOLPATH_TYPE/TURN
+$$ OPERATION NAME : G2 - EB
+$$  Début de génération de: G2 - EB
+FEDRAT/    0.3000,MMPR
+SPINDL/ 7000.0000,RPM,CLW
+GOTO  /    0.00000,    0.00000,   -0.10000, 0.000000, 1.000000, 0.000000
+FEDRAT/    0.2500,MMPR
+GOTO  /    2.00000,    0.00000,   -0.10000, 0.000000, 1.000000, 0.000000
+INDIRV/    1.00000,    0.00000,    0.00000
+TLON,GOFWD/(CYLNDR/    2.00000,    0.00000,    2.00000,$
+       0.00000,    1.00000,    0.00000,    2.10000),ON,$
+   (PLANE/PERPTO,$
+      (PLANE/(POINT/    2.00000,    0.00000,    2.00000),PERPTO,$
+      (VECTOR/ 0.000000, 1.000000, 0.000000)),$
+      (POINT/    2.00000,    0.00000,    2.00000),$
+      (POINT/    4.10000,    0.00000,    2.00000))
+GOTO  /    4.10000,    0.00000,    4.00000, 0.000000, 1.000000, 0.000000
+FEDRAT/    0.5000,MMPR
+GOTO  /    4.80711,    0.00000,    4.70711, 0.000000, 1.000000, 0.000000
+$$  Fin de génération de: G2 - EB
+END_OP/LATHE
+$$ OPERATION NAME : Changement outil.66
+$$  Début de génération de: Changement outil.66
 $$ TOOLCHANGEBEGINNING
 CUTTER/  1.000000,  0.000000,  0.500000,  0.000000,  0.000000,$
          0.000000,  5.000000
@@ -128,8 +219,8 @@ ANGLE,,PITCH,,CORE,    0.000000
 LOADTL/3,ADJUST,1,SPINDL,15000.000000,MILL
 $$ COOLNT/
 $$ TOOLCHANGEEND
-$$  Fin de génération de: Changement outil.48
-OP_NAME/Contournage periph - PATH1 - BROCHE Horizontale
+$$  Fin de génération de: Changement outil.66
+OP_NAME/Contournage periph - BROCHE Horizontale
 START_OP/MILL
 SPINDL_NAME/NAME,BP_PATH1,NUMB,1
 OPDATA/ACCURACY,    0.010000,OFFSET,    0.000000,    0.000000,$
@@ -144,9 +235,8 @@ DEC_XY,,,,DEC_POL,,,DEC_Z,,LF,$
 DYN_DIR,,DYN_RAD,,DYN_ANG,,LF,$
 PASSE_N,,STEP,,RATIO_F,,VIDE,,SUREP,,LF,$
 TEMPO,,LF
-$$ OPERATION NAME : Contournage periph - PATH1 - BROCHE Horizontale
-$$  Début de génération de: Contournage periph - PATH1 - BROCHE Horizon$
-tale
+$$ OPERATION NAME : Contournage periph - BROCHE Horizontale
+$$  Début de génération de: Contournage periph - BROCHE Horizontale
 TOOLPATH_TYPE/3AXIS
 TLCOMP/3,ADJUST,1
 SPINDL/15000.0000,RPM,CLW
@@ -208,14 +298,13 @@ GOTO  /    3.20000,    0.00000,    2.37946, 1.000000, 0.000000, 0.000000
 GOTO  /    3.70000,    0.00000,    2.37946, 1.000000, 0.000000, 0.000000
 RAPID
 GOTO  /    8.70000,    0.00000,    2.37946, 1.000000, 0.000000, 0.000000
-$$  Fin de génération de: Contournage periph - PATH1 - BROCHE Horizonta$
-le
+$$  Fin de génération de: Contournage periph - BROCHE Horizontale
 END_OP/MILL
-$$ OPERATION NAME : Copie transformation - Contournage periph - PATH1 -$
- BROCHE Horizontale
+$$ OPERATION NAME : Copie transformation - Contournage periph - BROCHE $
+Horizontale
 $$  Début de génération de: Copie transformation - Contournage periph -$
- PATH1 - BROCHE Horizontale
-OP_NAME/Contournage periph - PATH1 - BROCHE Horizontale
+ BROCHE Horizontale
+OP_NAME/Contournage periph - BROCHE Horizontale
 START_OP/MILL
 SPINDL_NAME/NAME,BP_PATH1,NUMB,1
 OPDATA/ACCURACY,    0.010000,OFFSET,    0.000000,    0.000000,$
@@ -230,9 +319,8 @@ DEC_XY,,,,DEC_POL,,,DEC_Z,,LF,$
 DYN_DIR,,DYN_RAD,,DYN_ANG,,LF,$
 PASSE_N,,STEP,,RATIO_F,,VIDE,,SUREP,,LF,$
 TEMPO,,LF
-$$ OPERATION NAME : Contournage periph - PATH1 - BROCHE Horizontale
-$$  Début de génération de: Contournage periph - PATH1 - BROCHE Horizon$
-tale
+$$ OPERATION NAME : Contournage periph - BROCHE Horizontale
+$$  Début de génération de: Contournage periph - BROCHE Horizontale
 TOOLPATH_TYPE/3AXIS
 SPINDL/15000.0000,RPM,CLW
 RAPID
@@ -293,10 +381,9 @@ GOTO  /    2.77128,    1.60000,    2.37946, 0.866025, 0.500000, 0.000000
 GOTO  /    3.20429,    1.85000,    2.37946, 0.866025, 0.500000, 0.000000
 RAPID
 GOTO  /    7.53442,    4.35000,    2.37946, 0.866025, 0.500000, 0.000000
-$$  Fin de génération de: Contournage periph - PATH1 - BROCHE Horizonta$
-le
+$$  Fin de génération de: Contournage periph - BROCHE Horizontale
 END_OP/MILL
-OP_NAME/Contournage periph - PATH1 - BROCHE Horizontale
+OP_NAME/Contournage periph - BROCHE Horizontale
 START_OP/MILL
 SPINDL_NAME/NAME,BP_PATH1,NUMB,1
 OPDATA/ACCURACY,    0.010000,OFFSET,    0.000000,    0.000000,$
@@ -311,9 +398,8 @@ DEC_XY,,,,DEC_POL,,,DEC_Z,,LF,$
 DYN_DIR,,DYN_RAD,,DYN_ANG,,LF,$
 PASSE_N,,STEP,,RATIO_F,,VIDE,,SUREP,,LF,$
 TEMPO,,LF
-$$ OPERATION NAME : Contournage periph - PATH1 - BROCHE Horizontale
-$$  Début de génération de: Contournage periph - PATH1 - BROCHE Horizon$
-tale
+$$ OPERATION NAME : Contournage periph - BROCHE Horizontale
+$$  Début de génération de: Contournage periph - BROCHE Horizontale
 TOOLPATH_TYPE/3AXIS
 SPINDL/15000.0000,RPM,CLW
 RAPID
@@ -374,10 +460,9 @@ GOTO  /    1.60000,    2.77128,    2.37946, 0.500000, 0.866025, 0.000000
 GOTO  /    1.85000,    3.20429,    2.37946, 0.500000, 0.866025, 0.000000
 RAPID
 GOTO  /    4.35000,    7.53442,    2.37946, 0.500000, 0.866025, 0.000000
-$$  Fin de génération de: Contournage periph - PATH1 - BROCHE Horizonta$
-le
+$$  Fin de génération de: Contournage periph - BROCHE Horizontale
 END_OP/MILL
-OP_NAME/Contournage periph - PATH1 - BROCHE Horizontale
+OP_NAME/Contournage periph - BROCHE Horizontale
 START_OP/MILL
 SPINDL_NAME/NAME,BP_PATH1,NUMB,1
 OPDATA/ACCURACY,    0.010000,OFFSET,    0.000000,    0.000000,$
@@ -392,9 +477,8 @@ DEC_XY,,,,DEC_POL,,,DEC_Z,,LF,$
 DYN_DIR,,DYN_RAD,,DYN_ANG,,LF,$
 PASSE_N,,STEP,,RATIO_F,,VIDE,,SUREP,,LF,$
 TEMPO,,LF
-$$ OPERATION NAME : Contournage periph - PATH1 - BROCHE Horizontale
-$$  Début de génération de: Contournage periph - PATH1 - BROCHE Horizon$
-tale
+$$ OPERATION NAME : Contournage periph - BROCHE Horizontale
+$$  Début de génération de: Contournage periph - BROCHE Horizontale
 TOOLPATH_TYPE/3AXIS
 SPINDL/15000.0000,RPM,CLW
 RAPID
@@ -455,13 +539,12 @@ GOTO  /    0.00000,    3.20000,    2.37946, 0.000000, 1.000000, 0.000000
 GOTO  /    0.00000,    3.70000,    2.37946, 0.000000, 1.000000, 0.000000
 RAPID
 GOTO  /    0.00000,    8.70000,    2.37946, 0.000000, 1.000000, 0.000000
-$$  Fin de génération de: Contournage periph - PATH1 - BROCHE Horizonta$
-le
+$$  Fin de génération de: Contournage periph - BROCHE Horizontale
 END_OP/MILL
-$$  Fin de génération de: Copie transformation - Contournage periph - P$
-ATH1 - BROCHE Horizontale
-$$ OPERATION NAME : Changement outil.47
-$$  Début de génération de: Changement outil.47
+$$  Fin de génération de: Copie transformation - Contournage periph - B$
+ROCHE Horizontale
+$$ OPERATION NAME : Changement outil.65
+$$  Début de génération de: Changement outil.65
 $$ TOOLCHANGEBEGINNING
 CUTTER/  1.000000,  0.000000,  0.500000,  0.000000,  0.000000,$
          0.000000,  5.000000
@@ -472,8 +555,8 @@ ANGLE,,PITCH,,CORE,    0.000000
 LOADTL/5,ADJUST,1,SPINDL,15000.000000,MILL
 $$ COOLNT/
 $$ TOOLCHANGEEND
-$$  Fin de génération de: Changement outil.47
-OP_NAME/Contournage periph - PATH1 - BROCHE Frontale
+$$  Fin de génération de: Changement outil.65
+OP_NAME/Contournage periph - BROCHE Frontale
 START_OP/MILL
 SPINDL_NAME/NAME,BP_PATH1,NUMB,1
 OPDATA/ACCURACY,    0.005000,OFFSET,    0.000000,    0.000000,$
@@ -488,8 +571,8 @@ DEC_XY,,,,DEC_POL,,,DEC_Z,,LF,$
 DYN_DIR,,DYN_RAD,,DYN_ANG,,LF,$
 PASSE_N,,STEP,,RATIO_F,,VIDE,,SUREP,,LF,$
 TEMPO,,LF
-$$ OPERATION NAME : Contournage periph - PATH1 - BROCHE Frontale
-$$  Début de génération de: Contournage periph - PATH1 - BROCHE Frontale
+$$ OPERATION NAME : Contournage periph - BROCHE Frontale
+$$  Début de génération de: Contournage periph - BROCHE Frontale
 TOOLPATH_TYPE/3AXIS
 TLCOMP/5,ADJUST,1
 SPINDL/15000.0000,RPM,CLW
@@ -552,7 +635,7 @@ GOTO  /   -0.03910,    0.00000,    0.80000, 0.000000, 0.000000,-1.000000
 GOTO  /   -0.03910,    0.00000,    0.30000, 0.000000, 0.000000,-1.000000
 RAPID
 GOTO  /   -0.03910,    0.00000,   -4.70000, 0.000000, 0.000000,-1.000000
-$$  Fin de génération de: Contournage periph - PATH1 - BROCHE Frontale
+$$  Fin de génération de: Contournage periph - BROCHE Frontale
 END_OP/MILL
 $$ SPINDL/OFF
 $$ REWIND/0
