@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 import re
 
 from p01_machines_config.machine_enums import MotionMode
@@ -63,6 +64,63 @@ def emit_tlon_not_supported(argument_text: str, iso_writer: IsoWriter, reason: s
         iso_writer.comment(f"NON GERE: TLON/{argument_text} ({reason})")
         return
     iso_writer.comment(f"NON GERE: TLON/{argument_text}")
+
+
+def _rotate_coordinates_around_z(position_x: float, position_y: float, position_z: float, angle_degrees: float) -> tuple[float, float, float]:
+    """Applique une rotation aux coordonnees dans le plan XY."""
+    angle_radians = math.radians(angle_degrees)
+    rotated_x = position_x * math.cos(angle_radians) - position_y * math.sin(angle_radians)
+    rotated_y = position_x * math.sin(angle_radians) + position_y * math.cos(angle_radians)
+    return rotated_x, rotated_y, position_z
+
+
+def _transform_tlon_definition_to_current_c(definition: TlonArcDefinition, position_c: float) -> TlonArcDefinition:
+    """Transforme les coordonnees/vecteurs APT d'un arc dans le repere ISO courant."""
+    tangent_x, tangent_y, tangent_z = _rotate_coordinates_around_z(
+        definition.tangent_x,
+        definition.tangent_y,
+        definition.tangent_z,
+        -position_c,
+    )
+    center_x, center_y, center_z = _rotate_coordinates_around_z(
+        definition.center_x,
+        definition.center_y,
+        definition.center_z,
+        -position_c,
+    )
+    end_x, end_y, end_z = _rotate_coordinates_around_z(
+        definition.end_x,
+        definition.end_y,
+        definition.end_z,
+        -position_c,
+    )
+
+    axis_u = definition.axis_u
+    axis_v = definition.axis_v
+    axis_w = definition.axis_w
+    if axis_u is not None and axis_v is not None and axis_w is not None:
+        axis_u, axis_v, axis_w = _rotate_coordinates_around_z(axis_u, axis_v, axis_w, -position_c)
+
+    return TlonArcDefinition(
+        geometry_kind=definition.geometry_kind,
+        start_x=definition.start_x,
+        start_y=definition.start_y,
+        start_z=definition.start_z,
+        tangent_x=tangent_x,
+        tangent_y=tangent_y,
+        tangent_z=tangent_z,
+        center_x=center_x,
+        center_y=center_y,
+        center_z=center_z,
+        radius=definition.radius,
+        end_x=end_x,
+        end_y=end_y,
+        end_z=end_z,
+        raw_argument_text=definition.raw_argument_text,
+        axis_u=axis_u,
+        axis_v=axis_v,
+        axis_w=axis_w,
+    )
 
 
 def parse_tlon_circle_definition(argument_text: str, state: WriterState) -> TlonArcDefinition | None:
@@ -271,17 +329,14 @@ def _solve_tlon_arc_in_machine_plane(definition: TlonArcDefinition, work_plane: 
 
 
 def solve_tlon_circle_xy(definition: TlonArcDefinition, state: WriterState, iso_writer: IsoWriter) -> TlonArcSolution | None:
-    """Resout geometriquement un TLON/CIRCLE limite au plan XY/G17."""
+    """Resout geometriquement un TLON/CIRCLE dans le plan outil courant."""
     if not state.tool_number:
         emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "outil courant absent")
         return None
 
     work_plane, work_plane_code = iso_writer.machine.get_tool_geometry_work_plane(state.tool_number)
-    if work_plane != "XY":
-        emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "CIRCLE CATIA limite au plan XY/G17")
-        return None
-
-    return _solve_tlon_arc_in_machine_plane(definition, work_plane, work_plane_code, iso_writer)
+    transformed_definition = _transform_tlon_definition_to_current_c(definition, state.position_c)
+    return _solve_tlon_arc_in_machine_plane(transformed_definition, work_plane, work_plane_code, iso_writer)
 
 
 def solve_tlon_cylndr_definition(definition: TlonArcDefinition, state: WriterState, iso_writer: IsoWriter) -> TlonArcSolution | None:
@@ -293,6 +348,8 @@ def solve_tlon_cylndr_definition(definition: TlonArcDefinition, state: WriterSta
         emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "axe CYLNDR absent")
         return None
 
+    transformed_definition = _transform_tlon_definition_to_current_c(definition, state.position_c)
+
     work_plane, work_plane_code = iso_writer.machine.get_tool_geometry_work_plane(state.tool_number)
     tolerance = float(iso_writer.machine.calculation_tolerance)
     tool_config = iso_writer.machine.get_required_tool_config(state.tool_number)
@@ -301,9 +358,17 @@ def solve_tlon_cylndr_definition(definition: TlonArcDefinition, state: WriterSta
         emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "axe outil JSON invalide")
         return None
 
-    axis_u = abs(definition.axis_u)
-    axis_v = abs(definition.axis_v)
-    axis_w = abs(definition.axis_w)
+    if (
+        transformed_definition.axis_u is None
+        or transformed_definition.axis_v is None
+        or transformed_definition.axis_w is None
+    ):
+        emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "axe CYLNDR absent")
+        return None
+
+    axis_u = abs(transformed_definition.axis_u)
+    axis_v = abs(transformed_definition.axis_v)
+    axis_w = abs(transformed_definition.axis_w)
     tool_axis_u = abs(float(tool_axis_vector[0]))
     tool_axis_v = abs(float(tool_axis_vector[1]))
     tool_axis_w = abs(float(tool_axis_vector[2]))
@@ -321,7 +386,7 @@ def solve_tlon_cylndr_definition(definition: TlonArcDefinition, state: WriterSta
         emit_tlon_not_supported(definition.raw_argument_text, iso_writer, f"axe CYLNDR hors plan machine {work_plane_code}")
         return None
 
-    return _solve_tlon_arc_in_machine_plane(definition, work_plane, work_plane_code, iso_writer)
+    return _solve_tlon_arc_in_machine_plane(transformed_definition, work_plane, work_plane_code, iso_writer)
 
 
 def solve_tlon_definition(definition: TlonArcDefinition, state: WriterState, iso_writer: IsoWriter) -> TlonArcSolution | None:
