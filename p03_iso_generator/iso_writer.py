@@ -59,17 +59,16 @@ class IsoWriter:
         self.emit(f"(CANAL {channel_number})")
 
 
-    def tool_change(self, tool_number: int, tool_comment: str, position_x: float, position_y: float, position_z: float) -> None:
+    def tool_change(self, tool_number: int, tool_comment: str, position_x: float, position_c: float) -> None:
         """Emet les lignes ISO pour un changement d'outil, en fonction du type d'outil et de l'etat de la broche."""
         axis_words = [self.machine.rapid_move_code, f"{self.machine.toolname_prefix}0"]
         x_to_emit = position_x * 2 if self.machine.x_diameter else position_x
         axis_words.append(f"X{format_float_to_iso(x_to_emit)}")
-        axis_words.append(f"Y{format_float_to_iso(position_y)}")
-        axis_words.append(f"Z{format_float_to_iso(position_z)}")
         self.emission_state.last_x_position = position_x
-        self.emission_state.last_y_position = position_y
-        self.emission_state.last_z_position = position_z
         self.emit(f"{' '.join(axis_words)} (DEGAGEMENT OUTIL)")
+        self.emit(f"{self.machine.rapid_move_code} C{format_float_to_iso(position_c)}")
+        self.emission_state.last_c_position = position_c
+
         self.emit(f"({self.machine.toolname_prefix}{tool_number:02d}{tool_number:02d} - {tool_comment})")
         self.emit(f"{self.machine.toolname_prefix}{tool_number:02d}{tool_number:02d}")
 

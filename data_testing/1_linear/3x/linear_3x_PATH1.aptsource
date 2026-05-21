@@ -1,5 +1,5 @@
 $$ -----------------------------------------------------------------
-$$     Généré le Monday, 18 May 2026 13:12:21
+$$     Généré le Thursday, 21 May 2026 12:13:08
 $$     CATIA APT VERSION 1.0
 $$ -----------------------------------------------------------------
 CHANNEL,1
@@ -35,7 +35,7 @@ LOADTL/5,ADJUST,1,SPINDL,15000.000000,MILL
 $$ COOLNT/
 $$ TOOLCHANGEEND
 $$  Fin de génération de: Changement outil.10
-OP_NAME/Contournage periph - PATH1 - BROCHE Frontale
+OP_NAME/Contournage periph - BROCHE Frontale
 START_OP/MILL
 SPINDL_NAME/NAME,BP_PATH1,NUMB,1
 OPDATA/ACCURACY,    0.005000,OFFSET,    0.000000,    0.000000,$
@@ -50,8 +50,8 @@ DEC_XY,,,,DEC_POL,,,DEC_Z,,LF,$
 DYN_DIR,,DYN_RAD,,DYN_ANG,,LF,$
 PASSE_N,,STEP,,RATIO_F,,VIDE,,SUREP,,LF,$
 TEMPO,,LF
-$$ OPERATION NAME : Contournage periph - PATH1 - BROCHE Frontale
-$$  Début de génération de: Contournage periph - PATH1 - BROCHE Frontale
+$$ OPERATION NAME : Contournage periph - BROCHE Frontale
+$$  Début de génération de: Contournage periph - BROCHE Frontale
 TOOLPATH_TYPE/3AXIS
 TLCOMP/5,ADJUST,1
 SPINDL/15000.0000,RPM,CLW
@@ -114,7 +114,7 @@ GOTO  /   -0.03910,    0.00000,    0.80000, 0.000000, 0.000000,-1.000000
 GOTO  /   -0.03910,    0.00000,    0.30000, 0.000000, 0.000000,-1.000000
 RAPID
 GOTO  /   -0.03910,    0.00000,   -4.70000, 0.000000, 0.000000,-1.000000
-$$  Fin de génération de: Contournage periph - PATH1 - BROCHE Frontale
+$$  Fin de génération de: Contournage periph - BROCHE Frontale
 END_OP/MILL
 $$ OPERATION NAME : Changement outil.20
 $$  Début de génération de: Changement outil.20
@@ -129,7 +129,7 @@ LOADTL/3,ADJUST,1,SPINDL,15000.000000,MILL
 $$ COOLNT/
 $$ TOOLCHANGEEND
 $$  Fin de génération de: Changement outil.20
-OP_NAME/Contournage periph - PATH1 - BROCHE Horizontale
+OP_NAME/Contournage periph - BROCHE Horizontale
 START_OP/MILL
 SPINDL_NAME/NAME,BP_PATH1,NUMB,1
 OPDATA/ACCURACY,    0.010000,OFFSET,    0.000000,    0.000000,$
@@ -144,9 +144,8 @@ DEC_XY,,,,DEC_POL,,,DEC_Z,,LF,$
 DYN_DIR,,DYN_RAD,,DYN_ANG,,LF,$
 PASSE_N,,STEP,,RATIO_F,,VIDE,,SUREP,,LF,$
 TEMPO,,LF
-$$ OPERATION NAME : Contournage periph - PATH1 - BROCHE Horizontale
-$$  Début de génération de: Contournage periph - PATH1 - BROCHE Horizon$
-tale
+$$ OPERATION NAME : Contournage periph - BROCHE Horizontale
+$$  Début de génération de: Contournage periph - BROCHE Horizontale
 TOOLPATH_TYPE/3AXIS
 TLCOMP/3,ADJUST,1
 SPINDL/15000.0000,RPM,CLW
@@ -208,8 +207,7 @@ GOTO  /    3.20000,    0.00000,    2.37946, 1.000000, 0.000000, 0.000000
 GOTO  /    3.70000,    0.00000,    2.37946, 1.000000, 0.000000, 0.000000
 RAPID
 GOTO  /    8.70000,    0.00000,    2.37946, 1.000000, 0.000000, 0.000000
-$$  Fin de génération de: Contournage periph - PATH1 - BROCHE Horizonta$
-le
+$$  Fin de génération de: Contournage periph - BROCHE Horizontale
 END_OP/MILL
 $$ OPERATION NAME : Changement outil.11
 $$  Début de génération de: Changement outil.11
@@ -224,7 +222,7 @@ LOADTL/5,ADJUST,1,SPINDL,15000.000000,MILL
 $$ COOLNT/
 $$ TOOLCHANGEEND
 $$  Fin de génération de: Changement outil.11
-OP_NAME/Contournage periph - PATH1 - BROCHE Frontale
+OP_NAME/Contournage periph - BROCHE Frontale
 START_OP/MILL
 SPINDL_NAME/NAME,BP_PATH1,NUMB,1
 OPDATA/ACCURACY,    0.005000,OFFSET,    0.000000,    0.000000,$
@@ -239,8 +237,8 @@ DEC_XY,,,,DEC_POL,,,DEC_Z,,LF,$
 DYN_DIR,,DYN_RAD,,DYN_ANG,,LF,$
 PASSE_N,,STEP,,RATIO_F,,VIDE,,SUREP,,LF,$
 TEMPO,,LF
-$$ OPERATION NAME : Contournage periph - PATH1 - BROCHE Frontale
-$$  Début de génération de: Contournage periph - PATH1 - BROCHE Frontale
+$$ OPERATION NAME : Contournage periph - BROCHE Frontale
+$$  Début de génération de: Contournage periph - BROCHE Frontale
 TOOLPATH_TYPE/3AXIS
 TLCOMP/5,ADJUST,1
 SPINDL/15000.0000,RPM,CLW
@@ -303,7 +301,7 @@ GOTO  /   -0.03910,    0.00000,    0.80000, 0.000000, 0.000000,-1.000000
 GOTO  /   -0.03910,    0.00000,    0.30000, 0.000000, 0.000000,-1.000000
 RAPID
 GOTO  /   -0.03910,    0.00000,   -4.70000, 0.000000, 0.000000,-1.000000
-$$  Fin de génération de: Contournage periph - PATH1 - BROCHE Frontale
+$$  Fin de génération de: Contournage periph - BROCHE Frontale
 END_OP/MILL
 $$ SPINDL/OFF
 $$ REWIND/0

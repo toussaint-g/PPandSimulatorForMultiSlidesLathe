@@ -107,7 +107,8 @@ class ToolPathViewer:
         obj_tool_path_interpeter = ToolPathInterpreter(self.machine_config, self.channel_name, self.part_thickness)
         actors_list = obj_tool_path_interpeter.analyze(
             list_datas,
-            self.toolpath_parameters.tool_path_circle_resolution)
+            self.toolpath_parameters.tool_path_circle_resolution,
+            self.toolpath_parameters.tool_path_c_axis_resolution)
 
         lookup_table = vtk.vtkLookupTable()
         lookup_table.SetNumberOfTableValues(3)

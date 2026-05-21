@@ -30,7 +30,7 @@ class ToolPathInterpreter:
             return [1, 0, 0]
         return None
 
-    def analyze(self, list_datas, resolution_cercle):
+    def analyze(self, list_datas, circle_resolution, c_axis_resolution):
         """Cette methode recupere les donnees utiles a la construction des trajectoires"""
 
         # Instanciation des classes
@@ -117,7 +117,7 @@ class ToolPathInterpreter:
 
             max_radius = max(math.hypot(float(point[0]), float(point[1])) for point in path_points)
             c_arc_length = max_radius * abs(math.radians(float(current_c) - float(previous_c)))
-            target_resolution = max(float(resolution_cercle), 1e-9)
+            target_resolution = max(float(c_axis_resolution), 1e-9)
             num_segments = max(
                 len(path_points) - 1,
                 int(math.ceil(max(xyz_length, c_arc_length) / target_resolution)),
@@ -310,7 +310,7 @@ class ToolPathInterpreter:
                         previous_point,
                         current_point,
                         current_line.radius,
-                        resolution_cercle,
+                        circle_resolution,
                         True,
                         current_line.work_plane)
                     if current_c != previous_c:
@@ -327,7 +327,7 @@ class ToolPathInterpreter:
                         previous_point,
                         current_point,
                         current_line.radius,
-                        resolution_cercle,
+                        circle_resolution,
                         False,
                         current_line.work_plane)
                     if current_c != previous_c:

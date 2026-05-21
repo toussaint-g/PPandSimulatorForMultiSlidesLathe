@@ -41,6 +41,22 @@ def _get_tool_k_vector(state: WriterState, iso_writer: IsoWriter) -> tuple[float
     return tool_i, tool_j, tool_k
 
 
+def _get_channel_i_path_vector(iso_writer: IsoWriter) -> tuple[float, float, float]:
+    """Retourne le ipathvector du canal courant."""
+    path_vector = iso_writer.machine.channel_ipathvector
+    if not isinstance(path_vector, (list, tuple)) or len(path_vector) != 3:
+        raise ValueError(
+            f"MachineConfigError: ipathvector absent ou invalide pour le canal {iso_writer.machine.channel_name}"
+        )
+
+    path_i = float(path_vector[0])
+    path_j = float(path_vector[1])
+    path_k = float(path_vector[2])
+    if (path_i, path_j, path_k) not in ((1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)):
+        raise ValueError(f"MachineConfigError: ipathvector non supporte pour le canal {iso_writer.machine.channel_name}")
+    return path_i, path_j, path_k
+
+
 def _is_milling_tool(state: WriterState, iso_writer: IsoWriter) -> bool:
     """Retourne True si l'outil courant est declare en fraisage dans la config machine."""
     tool_config = iso_writer.machine.get_required_tool_config(state.tool_number)
@@ -58,9 +74,11 @@ def _compute_c_axis_from_ijk(
     apt_k: float,
     tool_i: float,
     tool_j: float,
+    path_i: float,
+    path_j: float,
     tolerance: float,
 ) -> float | None:
-    """Calcule C depuis le vecteur APT, relativement au ktoolvector courant."""
+    """Calcule C depuis le vecteur APT, relativement au ipathvector et ktoolvector courants."""
     apt_has_xy_component = abs(apt_i) > tolerance or abs(apt_j) > tolerance
     apt_has_z_component = abs(apt_k) > tolerance
 
@@ -72,8 +90,9 @@ def _compute_c_axis_from_ijk(
         return None
 
     apt_angle = _vector_xy_angle_degrees(apt_i, apt_j)
+    path_angle = _vector_xy_angle_degrees(path_i, path_j)
     tool_angle = _vector_xy_angle_degrees(tool_i, tool_j)
-    return _normalize_angle_0_360(apt_angle - tool_angle)
+    return _normalize_angle_0_360(apt_angle + path_angle - tool_angle)
 
 
 def _rotate_coordinates_around_z(position_x: float, position_y: float, position_z: float, angle_degrees: float) -> tuple[float, float, float]:
@@ -141,12 +160,11 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
         iso_writer.spindle_stop(previous_tool_number)
         state.spindle_on = False
 
-    # Apres un changement d'outil, on suppose que la machine revient a la
-    # position de reference de l'outil pour eviter les deplacements rapides inattendus.
-    state.position_x, state.position_y, state.position_z = iso_writer.machine.get_tool_change_point_for_c_axis(
-        state.position_c,
-    )
-    iso_writer.tool_change(state.tool_number, state.tool_comment, state.position_x, state.position_y, state.position_z)
+    # Avant le changement outil, on degage uniquement X puis on remet C a zero.
+    state.position_x = iso_writer.machine.get_tool_change_point_x_for_t0()
+    state.position_y = 0.0
+    state.position_c = 0.0
+    iso_writer.tool_change(state.tool_number, state.tool_comment, state.position_x, state.position_c)
 
 
 def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
@@ -206,12 +224,15 @@ def h_goto(apt_keyword: str, argument_text: str, state: WriterState, iso_writer:
 
     if _is_milling_tool(state, iso_writer):
         tool_i_value, tool_j_value, _tool_k_value = _get_tool_k_vector(state, iso_writer)
+        path_i_value, path_j_value, _path_k_value = _get_channel_i_path_vector(iso_writer)
         new_c_value = _compute_c_axis_from_ijk(
             new_i_value,
             new_j_value,
             new_k_value,
             tool_i_value,
             tool_j_value,
+            path_i_value,
+            path_j_value,
             tolerance,
         )
         if new_c_value is None:

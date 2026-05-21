@@ -27,13 +27,12 @@
         "coolantstop": "M9",
         "endprogram": "M30",
         "startandendfilecharacter": "%",
-        "ipartvector": [1, 0, 0],
-        "jpartvector": [0, 1, 0],
-        "kpartvector": [0, 0, 1]
+        "ipartvector": [1, 0, 0]
       },
       "channelslist": {
         "1": {
           "toolchangepointxforT0": 20,
+          "ipathvector": [1, 0, 0],
           "listoftools": [
             {
               "toolnumber": 1,
@@ -87,6 +86,7 @@
         },
         "2": {
           "toolchangepointxforT0": -20,
+          "ipathvector": [1, 0, 0],
           "listoftools": [
             {
               "toolnumber": 31,
@@ -140,6 +140,7 @@
         },
         "3": {
           "toolchangepointxforT0": 20,
+          "ipathvector": [-1, 0, 0],
           "listoftools": [
             {
               "toolnumber": 11,

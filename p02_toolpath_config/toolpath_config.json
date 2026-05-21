@@ -15,6 +15,7 @@
 		"caxismovecolor": "Blue",
 		"cursorpointcolor": "Yellow",
 		"cursorpointsize": 6,
-		"circleresolution": 0.3
+		"circleresolution": 0.3,
+		"caxisresolution": 1
 	}
 }

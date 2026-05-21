@@ -58,7 +58,7 @@ Pour le parametrage du rendu visuel des trajectoires outils. Plusieurs options d
 ### machines_config.json:
 Pour le parametrage des machines d'usinage. Un nombre d'options sont parametrables comme les **codes M et G**, les dispositions d'outils, etc...
 #### Informations sur le parametrage:
-- **partvector**: toujours a i[1, 0, 0], j[0, 1, 0] et k[0, 0, 1].
+- **ipartvector**: vecteur I de la piece.
 - **xmirror / ymirror**: booleens definis par outil. Si **xmirror** vaut true, les coordonnees X sont inversees dans le rendu toolpath. Si **ymirror** vaut true, les coordonnees Y sont inversees.
 - **toolvector**: repere determinant les orientations des outils de fraisage dans la machine.
 - **workplane**: repere determinant les plans de travail de chaque outil. Valeurs negatives pas utiles car plan de travail uniquement. /!\ Attention: les plans de travail pour les deplacements circulaires sont donnees uniquement par ces workplanes! Non prise en compte des G17/G18/G19 donnees par les programmes.
@@ -66,4 +66,4 @@ Pour le parametrage des machines d'usinage. Un nombre d'options sont parametrabl
     - **tool_type: 0** -> outil de tournage.
 	- **tool_type: 1** -> outil de fraisage.
 	- **tool_type: 2** -> outil stopper (pour ravitaillement matiere) -> pas cable pour l'instant.
-- **hometool X** doit-etre renseigne au rayon et doit-etre place par rapport au partvector.
+- **hometool X** doit-etre renseigne au rayon et doit-etre place par rapport au ipartvector.

@@ -1,5 +1,5 @@
 $$ -----------------------------------------------------------------
-$$     Généré le Thursday, 14 May 2026 14:59:17
+$$     Généré le Thursday, 21 May 2026 09:54:40
 $$     CATIA APT VERSION 1.0
 $$ -----------------------------------------------------------------
 CHANNEL,1
@@ -664,10 +664,10 @@ $$  Début de génération de: Changement outil tournage.23
 $$ TOOLCHANGEBEGINNING
 CUTTER/    0.000000
 TPRINT/Porte-plaquette extérieur - PATH1 - EB
-TDATA/TURN,    0.000000,    0.000000,    0.000000,QUADRANT,9,RADIUS,   $
- 0.000000,$
+TDATA/TURN,    0.000000,    0.000000,    0.000000,QUADRANT,,RADIUS,    $
+0.000000,$
 TYPE,MfgExternalTool,WEIGHT,,INV,0,ANGLE,    0.000000
-LOADTL/1,ADJUST,9,TURN
+LOADTL/1,ADJUST,,TURN
 $$ COOLNT/
 $$ TOOLCHANGEEND
 $$  Fin de génération de: Changement outil tournage.23
@@ -691,7 +691,7 @@ $$ OPERATION NAME : G3 - EB
 $$  Début de génération de: G3 - EB
 SWITCH/9,9
 FEDRAT/    0.3200,MMPR
-SPINDL/60000.0000,RPM,CCLW
+SPINDL/60000.0000,RPM,CLW
 GOTO  /    4.80711,    0.00000,    4.70711, 0.000000, 1.000000, 0.000000
 GOTO  /    4.10000,    0.00000,    4.00000, 0.000000, 1.000000, 0.000000
 FEDRAT/    0.1500,MMPR
@@ -733,7 +733,7 @@ $$ TOOLPATH_TYPE/TURN
 $$ OPERATION NAME : G2 - EB
 $$  Début de génération de: G2 - EB
 FEDRAT/    0.3000,MMPR
-SPINDL/ 7000.0000,RPM,CCLW
+SPINDL/ 7000.0000,RPM,CLW
 GOTO  /    0.00000,    0.00000,   -0.10000, 0.000000, 1.000000, 0.000000
 FEDRAT/    0.2500,MMPR
 GOTO  /    2.00000,    0.00000,   -0.10000, 0.000000, 1.000000, 0.000000

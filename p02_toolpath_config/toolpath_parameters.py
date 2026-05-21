@@ -26,6 +26,7 @@ class ToolPathParameters:
     tool_path_cursor_point_color: str
     tool_path_cursor_point_size: int
     tool_path_circle_resolution: float
+    tool_path_c_axis_resolution: float
 
     @classmethod
     def from_config(toolpath_parameters_builder, toolpath_config: JsonDict) -> "ToolPathParameters":
@@ -49,6 +50,7 @@ class ToolPathParameters:
                 tool_path_cursor_point_color=toolpath_viewer_config["cursorpointcolor"],
                 tool_path_cursor_point_size=toolpath_viewer_config["cursorpointsize"],
                 tool_path_circle_resolution=toolpath_viewer_config["circleresolution"],
+                tool_path_c_axis_resolution=toolpath_viewer_config["caxisresolution"],
             )
         except KeyError:
             raise ValueError("ToolPathConfigError: une cle est absente dans le fichier JSON")

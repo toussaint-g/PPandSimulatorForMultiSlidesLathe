@@ -82,10 +82,9 @@ class MachineParameters:
     xz_work_plane_code: str
     yz_work_plane_code: str
     channel_tool_change_point_x_for_t0: float
+    channel_ipathvector: list[float]
     channel_tools: list[JsonDict]
     ipartvector: list[float] | None
-    jpartvector: list[float] | None
-    kpartvector: list[float] | None
 
     def get_tool_config(self, tool_number: int) -> JsonDict | None:
         """Retourne la configuration JSON de l'outil pour le canal courant."""
@@ -110,6 +109,10 @@ class MachineParameters:
         tool_change_x_for_c = tool_change_x * math.cos(angle_radians) - tool_change_y * math.sin(angle_radians)
         tool_change_y_for_c = tool_change_x * math.sin(angle_radians) + tool_change_y * math.cos(angle_radians)
         return tool_change_x_for_c, tool_change_y_for_c, tool_change_z
+
+    def get_tool_change_point_x_for_t0(self) -> float:
+        """Retourne la coordonnee X du point de changement outil T0."""
+        return self.channel_tool_change_point_x_for_t0
 
     def get_initial_tool_change_point(self) -> tuple[float, float, float]:
         """Retourne le point de changement outil initial tant qu'aucun outil n'est actif."""
@@ -228,10 +231,9 @@ class MachineParameters:
                 xz_work_plane_code=normalize_gm_code(machine_informations["xzworkplane"]),
                 yz_work_plane_code=normalize_gm_code(machine_informations["yzworkplane"]),
                 channel_tool_change_point_x_for_t0=channel_tool_change_point_x_for_t0,
+                channel_ipathvector=channel_config["ipathvector"],
                 channel_tools=channel_config["listoftools"],
                 ipartvector=machine_informations.get("ipartvector"),
-                jpartvector=machine_informations.get("jpartvector"),
-                kpartvector=machine_informations.get("kpartvector"),
             )
         except KeyError:
             raise ValueError("MachineConfigError: une cle est absente dans le fichier JSON")
