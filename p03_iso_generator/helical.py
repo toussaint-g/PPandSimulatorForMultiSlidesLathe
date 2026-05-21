@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 
 from p03_iso_generator.apt_parser import csv_tokens
 from p03_iso_generator.geometric_calculations import (
@@ -61,6 +62,63 @@ def emit_helical_not_supported(argument_text: str, iso_writer: IsoWriter, reason
         iso_writer.comment(f"NON GERE: HELICAL/{argument_text} ({reason})")
         return
     iso_writer.comment(f"NON GERE: HELICAL/{argument_text}")
+
+
+def _rotate_coordinates_around_z(position_x: float, position_y: float, position_z: float, angle_degrees: float) -> tuple[float, float, float]:
+    """Applique une rotation aux coordonnees dans le plan XY."""
+    angle_radians = math.radians(angle_degrees)
+    rotated_x = position_x * math.cos(angle_radians) - position_y * math.sin(angle_radians)
+    rotated_y = position_x * math.sin(angle_radians) + position_y * math.cos(angle_radians)
+    return rotated_x, rotated_y, position_z
+
+
+def _transform_helical_definition_to_current_c(definition: HelicalMoveDefinition, position_c: float) -> HelicalMoveDefinition:
+    """Transforme les coordonnees/vecteurs APT d'une helice dans le repere ISO courant."""
+    center_x, center_y, center_z = _rotate_coordinates_around_z(
+        definition.center_x,
+        definition.center_y,
+        definition.center_z,
+        -position_c,
+    )
+    tangent_x, tangent_y, tangent_z = _rotate_coordinates_around_z(
+        definition.tangent_x,
+        definition.tangent_y,
+        definition.tangent_z,
+        -position_c,
+    )
+    axis_i, axis_j, axis_k = _rotate_coordinates_around_z(
+        definition.axis_i,
+        definition.axis_j,
+        definition.axis_k,
+        -position_c,
+    )
+    end_x, end_y, end_z = _rotate_coordinates_around_z(
+        definition.end_x,
+        definition.end_y,
+        definition.end_z,
+        -position_c,
+    )
+
+    return HelicalMoveDefinition(
+        center_x=center_x,
+        center_y=center_y,
+        center_z=center_z,
+        tangent_x=tangent_x,
+        tangent_y=tangent_y,
+        tangent_z=tangent_z,
+        axis_i=axis_i,
+        axis_j=axis_j,
+        axis_k=axis_k,
+        pitch=definition.pitch,
+        radius=definition.radius,
+        angle=definition.angle,
+        height=definition.height,
+        round_count=definition.round_count,
+        end_x=end_x,
+        end_y=end_y,
+        end_z=end_z,
+        raw_argument_text=definition.raw_argument_text,
+    )
 
 
 def parse_helical_definition(argument_text: str) -> HelicalMoveDefinition | None:
@@ -128,15 +186,17 @@ def solve_helical_definition(definition: HelicalMoveDefinition, state: WriterSta
         emit_helical_not_supported(definition.raw_argument_text, iso_writer, "plus d'un tour non supporte")
         return None
 
+    transformed_definition = _transform_helical_definition_to_current_c(definition, state.position_c)
+
     tool_config = iso_writer.machine.get_required_tool_config(state.tool_number)
     tool_axis_vector = tool_config.get("workplane")
     if not isinstance(tool_axis_vector, (list, tuple)) or len(tool_axis_vector) != 3:
         emit_helical_not_supported(definition.raw_argument_text, iso_writer, "axe outil JSON invalide")
         return None
 
-    axis_i = abs(definition.axis_i)
-    axis_j = abs(definition.axis_j)
-    axis_k = abs(definition.axis_k)
+    axis_i = abs(transformed_definition.axis_i)
+    axis_j = abs(transformed_definition.axis_j)
+    axis_k = abs(transformed_definition.axis_k)
     tool_axis_i = abs(float(tool_axis_vector[0]))
     tool_axis_j = abs(float(tool_axis_vector[1]))
     tool_axis_k = abs(float(tool_axis_vector[2]))
@@ -159,8 +219,18 @@ def solve_helical_definition(definition: HelicalMoveDefinition, state: WriterSta
         return None
 
     start_u, start_v = geometry_project_point_to_plane(work_plane, state.position_x, state.position_y, state.position_z)
-    center_u, center_v = geometry_project_point_to_plane(work_plane, definition.center_x, definition.center_y, definition.center_z)
-    end_u, end_v = geometry_project_point_to_plane(work_plane, definition.end_x, definition.end_y, definition.end_z)
+    center_u, center_v = geometry_project_point_to_plane(
+        work_plane,
+        transformed_definition.center_x,
+        transformed_definition.center_y,
+        transformed_definition.center_z,
+    )
+    end_u, end_v = geometry_project_point_to_plane(
+        work_plane,
+        transformed_definition.end_x,
+        transformed_definition.end_y,
+        transformed_definition.end_z,
+    )
 
     start_radius = ((start_u - center_u) ** 2 + (start_v - center_v) ** 2) ** 0.5
     end_radius = ((end_u - center_u) ** 2 + (end_v - center_v) ** 2) ** 0.5
@@ -171,14 +241,14 @@ def solve_helical_definition(definition: HelicalMoveDefinition, state: WriterSta
     radial_u = start_u - center_u
     radial_v = start_v - center_v
     if work_plane == "XY":
-        tangent_u = definition.tangent_x
-        tangent_v = definition.tangent_y
+        tangent_u = transformed_definition.tangent_x
+        tangent_v = transformed_definition.tangent_y
     elif work_plane == "XZ":
-        tangent_u = definition.tangent_x
-        tangent_v = definition.tangent_z
+        tangent_u = transformed_definition.tangent_x
+        tangent_v = transformed_definition.tangent_z
     else:
-        tangent_u = definition.tangent_y
-        tangent_v = definition.tangent_z
+        tangent_u = transformed_definition.tangent_y
+        tangent_v = transformed_definition.tangent_z
 
     cw_tangent_u, cw_tangent_v = geometry_cw_tangent_vector(work_plane, radial_u, radial_v)
     ccw_tangent_u, ccw_tangent_v = geometry_ccw_tangent_vector(work_plane, radial_u, radial_v)
@@ -191,12 +261,12 @@ def solve_helical_definition(definition: HelicalMoveDefinition, state: WriterSta
         work_plane_code=work_plane_code,
         motion_code=motion_code,
         start_z=state.position_z,
-        center_x=definition.center_x,
-        center_y=definition.center_y,
-        center_z=definition.center_z,
-        end_x=definition.end_x,
-        end_y=definition.end_y,
-        end_z=definition.end_z,
+        center_x=transformed_definition.center_x,
+        center_y=transformed_definition.center_y,
+        center_z=transformed_definition.center_z,
+        end_x=transformed_definition.end_x,
+        end_y=transformed_definition.end_y,
+        end_z=transformed_definition.end_z,
     )
 
 
