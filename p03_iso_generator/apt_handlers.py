@@ -41,31 +41,40 @@ def _get_tool_k_vector(state: WriterState, iso_writer: IsoWriter) -> tuple[float
     return tool_i, tool_j, tool_k
 
 
-def _get_channel_i_path_vector(iso_writer: IsoWriter) -> tuple[float, float, float]:
-    """Retourne le ipathvector du canal courant."""
-    path_vector = iso_writer.machine.channel_ipathvector
-    if not isinstance(path_vector, (list, tuple)) or len(path_vector) != 3:
+def _validate_spindle_vector(spindle_vector: object, spindle_number: int) -> tuple[float, float, float]:
+    """Valide le ispindlevector de la broche active."""
+    if not isinstance(spindle_vector, (list, tuple)) or len(spindle_vector) != 3:
         raise ValueError(
-            f"MachineConfigError: ipathvector absent ou invalide pour le canal {iso_writer.machine.channel_name}"
+            f"MachineConfigError: ispindlevector absent ou invalide pour la broche {spindle_number}"
         )
 
-    path_i = float(path_vector[0])
-    path_j = float(path_vector[1])
-    path_k = float(path_vector[2])
+    try:
+        path_i = float(spindle_vector[0])
+        path_j = float(spindle_vector[1])
+        path_k = float(spindle_vector[2])
+    except (TypeError, ValueError):
+        raise ValueError(f"MachineConfigError: ispindlevector invalide pour la broche {spindle_number}")
+
     if (path_i, path_j, path_k) not in ((1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)):
-        raise ValueError(f"MachineConfigError: ipathvector non supporte pour le canal {iso_writer.machine.channel_name}")
+        raise ValueError(f"MachineConfigError: ispindlevector non supporte pour la broche {spindle_number}")
     return path_i, path_j, path_k
+
+
+def _get_active_spindle_vector(state: WriterState) -> tuple[float, float, float]:
+    """Retourne le ispindlevector de la broche active declaree par SPINDL_NAME."""
+    if (
+        state.spindle_number is None
+        or state.spindle_vector_i is None
+        or state.spindle_vector_j is None
+        or state.spindle_vector_k is None
+    ):
+        raise ValueError("MachineConfigError: SPINDL_NAME absent avant un mouvement de fraisage")
+    return state.spindle_vector_i, state.spindle_vector_j, state.spindle_vector_k
 
 
 def _is_milling_tool(state: WriterState, iso_writer: IsoWriter) -> bool:
     """Retourne True si l'outil courant est declare en fraisage dans la config machine."""
-    tool_config = iso_writer.machine.get_required_tool_config(state.tool_number)
-    tool_type = tool_config.get("tooltype")
-    if tool_type == 1:
-        return True
-    if tool_type == 0:
-        return False
-    raise ValueError(f"MachineConfigError: tooltype invalide pour l'outil {state.tool_number}")
+    return iso_writer.machine.get_tool_type(state.tool_number) == ToolType.MILL
 
 
 def _compute_c_axis_from_ijk(
@@ -78,7 +87,7 @@ def _compute_c_axis_from_ijk(
     path_j: float,
     tolerance: float,
 ) -> float | None:
-    """Calcule C depuis le vecteur APT, relativement au ipathvector et ktoolvector courants."""
+    """Calcule C depuis le vecteur APT, relativement au ispindlevector et ktoolvector courants."""
     apt_has_xy_component = abs(apt_i) > tolerance or abs(apt_j) > tolerance
     apt_has_z_component = abs(apt_k) > tolerance
 
@@ -136,16 +145,6 @@ def h_tprint(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     state.tool_comment = tool_comment
 
 
-def h_tdata(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
-    """Met a jour le type d'outil et emet les lignes ISO correspondantes si necessaire."""
-    # Exemple fraisage : TDATA/MILL,38.000000,38.000000,38.000000,DIAM,1.000000,TYPE,MfgEndMillTool,WEIGHT,,ANGLE,,PITCH,,CORE,0.000000
-    # Exemple tournage : TDATA/TURN,0.000000,0.000000,0.000000,QUADRANT,9,RADIUS,0.000000,
-    #state.previous_tool_type = state.tool_type
-    tdata_tokens = csv_tokens(argument_text)
-    tool_type = ToolType(str(tdata_tokens[0]))
-    state.tool_type = tool_type
-
-
 def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Met a jour le numero d'outil et emet les lignes ISO correspondantes si necessaire."""
     # Exemple fraisage : LOADTL/10,ADJUST,1,SPINDL,15915.494300,MILL
@@ -153,9 +152,19 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     tool_tokens = csv_tokens(argument_text)
     previous_tool_number = state.tool_number
     state.tool_number = int(tool_tokens[0])
+    tool_type = ToolType(str(tool_tokens[-1]).strip().upper())
+    state.tool_type = tool_type
+
+    json_tool_type = iso_writer.machine.get_tool_type(state.tool_number)
+    if json_tool_type != tool_type:
+        raise ValueError(
+            f"MachineConfigError: type outil LOADTL {tool_type.value} different du JSON {json_tool_type.value} "
+            f"pour l'outil {state.tool_number}"
+        )
+    
 
     if (previous_tool_number is not None
-        and iso_writer.machine.get_spindle_code_for_tool(previous_tool_number) != iso_writer.machine.get_spindle_code_for_tool(state.tool_number)
+        and iso_writer.machine.get_code_for_tool_spindle(previous_tool_number) != iso_writer.machine.get_code_for_tool_spindle(state.tool_number)
         and state.spindle_on):
         iso_writer.spindle_stop(previous_tool_number)
         state.spindle_on = False
@@ -164,7 +173,45 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     state.position_x = iso_writer.machine.get_tool_change_point_x_for_t0()
     state.position_y = 0.0
     state.position_c = 0.0
-    iso_writer.tool_change(state.tool_number, state.tool_comment, state.position_x, state.position_c)
+    iso_writer.tool_change(
+        state.tool_number,
+        state.tool_comment,
+        state.position_x,
+        state.position_y,
+        state.position_z,
+        state.position_c
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def h_spindle_name(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
+    """Met a jour le numero de broche."""
+    # Exemple accepte : SPINDL_NAME/NAME,BP_PATH1,NUMB,1
+    spindle_tokens = csv_tokens(argument_text)
+    spindle_number = int(spindle_tokens[3])
+    spindle_vector = iso_writer.machine.get_spindle_vector(str(spindle_number))
+    spindle_i, spindle_j, spindle_k = _validate_spindle_vector(spindle_vector, spindle_number)
+    state.spindle_number = spindle_number
+    state.spindle_vector_i = spindle_i
+    state.spindle_vector_j = spindle_j
+    state.spindle_vector_k = spindle_k
+
+
+
+
 
 
 def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
@@ -224,7 +271,7 @@ def h_goto(apt_keyword: str, argument_text: str, state: WriterState, iso_writer:
 
     if _is_milling_tool(state, iso_writer):
         tool_i_value, tool_j_value, _tool_k_value = _get_tool_k_vector(state, iso_writer)
-        path_i_value, path_j_value, _path_k_value = _get_channel_i_path_vector(iso_writer)
+        path_i_value, path_j_value, _path_k_value = _get_active_spindle_vector(state)
         new_c_value = _compute_c_axis_from_ijk(
             new_i_value,
             new_j_value,
@@ -333,19 +380,21 @@ def h_default(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
 DISPATCH: dict[str, Handler] = {
     # Path
     "CHANNEL" : h_channel,
-    # Donnees de coupe
+    # Broches
+    "SPINDL_NAME": h_spindle_name,
     "SPINDL": h_spindle,
+    # Donnees de coupe
     "FEDRAT": h_feedrat,
-    # Trajectoires
+    # Trajectoires lineaires
     "RAPID": h_rapid,
     "GOTO": h_goto,
-    "CUTCOM": h_cutcom,
+    # Trajectoires circulaires
     "INDIRV": h_indirv,
     "TLON": h_tlon,
     "HELICAL": h_helical,
-    "END": h_fini,
+    # Compensation
+    "CUTCOM": h_cutcom,
     # Meta-informations (commentees dans l'ISO)
-    #"PARTNO": h_comment(text_info="PART NUMBER"), # TODO: Voir si utile...
     "PART_OPE": partial(h_comment, text_info="PHASE"),
     "PROGRAM": partial(h_comment, text_info="PROGRAMME"),
     "MACHINE": partial(h_comment, text_info="MACHINE"),
@@ -354,10 +403,11 @@ DISPATCH: dict[str, Handler] = {
     "OP_NAME": h_op_name,
     # Commentaires generaux
     "PPRINT": h_comment,
-    # Insertion forcée
+    # Insertions forcees
     "INSERT": h_insert,
     # Outils
     "TPRINT": h_tprint,
-    "TDATA": h_tdata,
     "LOADTL": h_loadtl,
+    # Programme
+    "END": h_fini,
 }

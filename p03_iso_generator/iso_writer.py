@@ -44,7 +44,7 @@ class IsoWriter:
 
     def footer(self, tool_number: int) -> None:
         """Ajoute le pied de page minimal pour un programme de fraisage."""
-        self.emit(self.machine.get_spindle_code_for_tool(tool_number))
+        self.emit(self.machine.get_code_for_tool_spindle(tool_number))
         self.emit(f"{self.machine.endprogram_code}")
         self.emit(f"{self.machine.startandendfile_character}")
 
@@ -59,25 +59,33 @@ class IsoWriter:
         self.emit(f"(CANAL {channel_number})")
 
 
-    def tool_change(self, tool_number: int, tool_comment: str, position_x: float, position_c: float) -> None:
+    def tool_change(self, tool_number: int, tool_comment: str,
+                    position_x: float, position_y: float, position_z: float, position_c: float) -> None:
         """Emet les lignes ISO pour un changement d'outil, en fonction du type d'outil et de l'etat de la broche."""
         axis_words = [self.machine.rapid_move_code, f"{self.machine.toolname_prefix}0"]
         x_to_emit = position_x * 2 if self.machine.x_diameter else position_x
         axis_words.append(f"X{format_float_to_iso(x_to_emit)}")
         self.emission_state.last_x_position = position_x
         self.emit(f"{' '.join(axis_words)} (DEGAGEMENT OUTIL)")
-        self.emit(f"{self.machine.rapid_move_code} C{format_float_to_iso(position_c)}")
-        self.emission_state.last_c_position = position_c
+        #self.emit(f"{self.machine.rapid_move_code} C{format_float_to_iso(position_c)}")
+        #self.emission_state.last_c_position = position_c
 
         self.emit(f"({self.machine.toolname_prefix}{tool_number:02d}{tool_number:02d} - {tool_comment})")
         self.emit(f"{self.machine.toolname_prefix}{tool_number:02d}{tool_number:02d}")
+
+
+
+
+
+
+
 
 
     # TODO: Gestion surface constante (G96/G97) pas prise en compte pour l'instant, a voir si on en a besoin.
     def spindle_start(self, tool_number: int, spindle_speed: float, spindle_unit: SpindleUnit, spindle_direction: SpindleDirection) -> None:
         """Demarre la broche avec la vitesse et la direction specifiees."""
         if self.emission_state.last_spindle_speed != spindle_speed or self.emission_state.last_spindle_direction != spindle_direction or self.emission_state.last_tool_number != tool_number:
-            self.emit(f"{self.machine.get_spindle_code_for_tool(tool_number, spindle_direction)} {self.machine.spindle_speed_prefix}{format_float_to_iso(spindle_speed)}")
+            self.emit(f"{self.machine.get_code_for_tool_spindle(tool_number, spindle_direction)} {self.machine.spindle_speed_prefix}{format_float_to_iso(spindle_speed)}")
             self.emission_state.last_spindle_speed = spindle_speed
             self.emission_state.last_spindle_direction = spindle_direction
             self.emission_state.last_tool_number = tool_number
@@ -85,7 +93,7 @@ class IsoWriter:
 
     def spindle_stop(self, tool_number: int) -> None:
         """Arrete la broche."""
-        self.emit(self.machine.get_spindle_code_for_tool(tool_number))
+        self.emit(self.machine.get_code_for_tool_spindle(tool_number))
 
 
     def linear_move(self, tool_number: int, motion_mode: MotionMode, cutcom_mode: ToolComp, feedrate_value: float,

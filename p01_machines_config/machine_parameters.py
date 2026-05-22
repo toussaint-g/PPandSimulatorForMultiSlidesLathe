@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 from typing import TypeAlias
-from p01_machines_config.machine_enums import SpindleDirection, ToolComp
+from p01_machines_config.machine_enums import SpindleDirection, ToolComp, ToolType
 
 
 JsonDict: TypeAlias = dict[str, object]
@@ -52,6 +52,17 @@ def _extract_tool_change_point_x_for_t0(tool_change_point_x: object) -> float:
         raise ValueError("MachineConfigError: toolchangepointxforT0 invalide")
 
 
+def _extract_vector(vector: object, field_name: str) -> list[float]:
+    """Extrait un vecteur 3D numerique depuis la configuration machine."""
+    if not isinstance(vector, (list, tuple)) or len(vector) != 3:
+        raise ValueError(f"MachineConfigError: vecteur {field_name} invalide")
+
+    try:
+        return [float(component) for component in vector]
+    except (TypeError, ValueError):
+        raise ValueError(f"MachineConfigError: vecteur {field_name} invalide")
+
+
 @dataclass
 class MachineParameters:
     """Regroupe les donnees utiles extraites du JSON machine pour un canal."""
@@ -82,9 +93,46 @@ class MachineParameters:
     xz_work_plane_code: str
     yz_work_plane_code: str
     channel_tool_change_point_x_for_t0: float
-    channel_ipathvector: list[float]
     channel_tools: list[JsonDict]
+    machine_spindles: JsonDict
     ipartvector: list[float] | None
+
+    def get_spindle_config(self, spindle_name: str) -> JsonDict | None:
+        """Retourne la configuration JSON de la broche demandee."""
+        spindle_config = self.machine_spindles.get(str(spindle_name))
+        if isinstance(spindle_config, dict):
+            return spindle_config
+        return None
+
+    def get_required_spindle_config(self, spindle_name: str) -> JsonDict:
+        """Retourne la configuration JSON de la broche ou leve une erreur."""
+        spindle_config = self.get_spindle_config(spindle_name)
+        if spindle_config is None:
+            raise ValueError(f"MachineConfigError: broche {spindle_name} introuvable")
+        return spindle_config
+
+    def get_spindle_vector(self, spindle_name: str) -> list[float]:
+        """Retourne le vecteur d'orientation declare pour la broche."""
+        spindle_config = self.get_required_spindle_config(spindle_name)
+        return _extract_vector(spindle_config.get("ispindlevector"), "ispindlevector")
+
+    def get_code_for_spindle_c_axis(self, spindle_name: str, c_axis_on: bool) -> str:
+        """Retourne le code ISO de passage broche/axe C pour une broche machine."""
+        spindle_config = self.get_required_spindle_config(spindle_name)
+        code_key = "spindletocaxison" if c_axis_on else "spindletocaxisoff"
+        spindle_code = spindle_config.get(code_key)
+        if not spindle_code:
+            raise ValueError(f"MachineConfigError: code {code_key} absent pour la broche {spindle_name}")
+        return normalize_gm_code(str(spindle_code))
+
+    def get_code_for_spindle_brake(self, spindle_name: str, brake_on: bool) -> str:
+        """Retourne le code ISO de frein de broche pour une broche machine."""
+        spindle_config = self.get_required_spindle_config(spindle_name)
+        code_key = "spindlebrakeon" if brake_on else "spindlebrakeoff"
+        spindle_code = spindle_config.get(code_key)
+        if not spindle_code:
+            raise ValueError(f"MachineConfigError: code {code_key} absent pour la broche {spindle_name}")
+        return normalize_gm_code(str(spindle_code))
 
     def get_tool_config(self, tool_number: int) -> JsonDict | None:
         """Retourne la configuration JSON de l'outil pour le canal courant."""
@@ -99,6 +147,11 @@ class MachineParameters:
         if tool_config is None:
             raise ValueError(f"MachineConfigError: outil {tool_number} introuvable dans le canal {self.channel_name}")
         return tool_config
+
+    def get_tool_type(self, tool_number: int) -> ToolType:
+        """Retourne le type d'outil declare dans le JSON machine."""
+        tool_config = self.get_required_tool_config(tool_number)
+        return ToolType(str(tool_config.get("tooltype")).strip().upper())
 
     def get_tool_change_point_for_c_axis(self, position_c: float) -> tuple[float, float, float]:
         """Retourne le point de changement outil transforme dans le repere machine selon C."""
@@ -118,15 +171,15 @@ class MachineParameters:
         """Retourne le point de changement outil initial tant qu'aucun outil n'est actif."""
         return self.channel_tool_change_point_x_for_t0, 0.0, 0.0
 
-    def get_spindle_code_for_tool(self, tool_number: int, spindle_direction: SpindleDirection | None = None) -> str:
+    def get_code_for_tool_spindle(self, tool_number: int, spindle_direction: SpindleDirection | None = None) -> str:
         """Retourne le code ISO de broche associe a l'outil et au sens demandes."""
         tool_config = self.get_required_tool_config(tool_number)
         if spindle_direction == SpindleDirection.CLW:
-            spindle_code = tool_config.get("spindleclwstart")
+            spindle_code = tool_config.get("toolspindleclwstart")
         elif spindle_direction == SpindleDirection.CCLW:
-            spindle_code = tool_config.get("spindlecclwstart")
+            spindle_code = tool_config.get("toolspindlecclwstart")
         elif spindle_direction is None:
-            spindle_code = tool_config.get("spindlestop")
+            spindle_code = tool_config.get("toolspindlestop")
         else:
             raise ValueError(f"MachineConfigError: sens de broche '{spindle_direction}' non supporte")
 
@@ -185,7 +238,7 @@ class MachineParameters:
     def from_machine_config(cls, machine_config: JsonDict) -> "MachineParameters":
         """Construit les parametres a partir du premier canal disponible."""
         try:
-            channel_name = next(iter(machine_config["channelslist"]))
+            channel_name = next(iter(machine_config["listofchannels"]))
         except StopIteration:
             raise ValueError("MachineConfigError: aucun canal n'est defini dans le fichier JSON")
         return cls.from_config(machine_config, channel_name)
@@ -195,7 +248,8 @@ class MachineParameters:
         """Construit les parametres machine/canal a partir du JSON charge."""
         try:
             machine_informations: JsonDict = machine_config["machineinformations"]  # type: ignore[assignment]
-            channels_list: JsonDict = machine_config["channelslist"]  # type: ignore[assignment]
+            spindles_list: JsonDict = machine_config["listofspindles"]  # type: ignore[assignment]
+            channels_list: JsonDict = machine_config["listofchannels"]  # type: ignore[assignment]
             channel_config: JsonDict = channels_list[channel_name]  # type: ignore[index]
             channel_tool_change_point_x_for_t0 = _extract_tool_change_point_x_for_t0(
                 channel_config["toolchangepointxforT0"]
@@ -231,8 +285,8 @@ class MachineParameters:
                 xz_work_plane_code=normalize_gm_code(machine_informations["xzworkplane"]),
                 yz_work_plane_code=normalize_gm_code(machine_informations["yzworkplane"]),
                 channel_tool_change_point_x_for_t0=channel_tool_change_point_x_for_t0,
-                channel_ipathvector=channel_config["ipathvector"],
                 channel_tools=channel_config["listoftools"],
+                machine_spindles=spindles_list,
                 ipartvector=machine_informations.get("ipartvector"),
             )
         except KeyError:

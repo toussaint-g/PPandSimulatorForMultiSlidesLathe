@@ -29,55 +29,73 @@
         "startandendfilecharacter": "%",
         "ipartvector": [1, 0, 0]
       },
-      "channelslist": {
+      "listofspindles": {
+        "1": {
+          "ispindlevector": [1, 0, 0],
+          "spindletocaxison": "M50",
+          "spindletocaxisoff": "M51",
+          "spindlebrakeon": "M500",
+          "spindlebrakeoff": "M501"
+        },
+        "2": {
+          "ispindlevector": [1, 0, 0],
+          "spindletocaxison": "M150",
+          "spindletocaxisoff": "M151",
+          "spindlebrakeon": "M600",
+          "spindlebrakeoff": "M601"
+        },
+        "3": {
+          "ispindlevector": [-1, 0, 0],
+          "spindletocaxison": "M250",
+          "spindletocaxisoff": "M251",
+          "spindlebrakeon": "M700",
+          "spindlebrakeoff": "M701"
+        }
+      },
+      "listofchannels": {
         "1": {
           "toolchangepointxforT0": 20,
-          "ipathvector": [1, 0, 0],
           "listoftools": [
             {
               "toolnumber": 1,
-              "tooltype": 0,
+              "tooltype": "TURN",
               "xmirrorfortoolpath": false,
               "workplane": [0, 1, 0],
-              "spindleclwstart": "M4",
-              "spindlecclwstart": "M3",
-              "spindlestop": "M5"
+              "toolspindleclwstart": "M4",
+              "toolspindlecclwstart": "M3",
+              "toolspindlestop": "M5"
             },
             {
               "toolnumber": 2,
-              "tooltype": 0,
+              "tooltype": "TURN",
               "xmirrorfortoolpath": false,
               "workplane": [0, 1, 0],
-              "spindleclwstart": "M14",
-              "spindlecclwstart": "M13",
-              "spindlestop": "M15"
+              "toolspindleclwstart": "M14",
+              "toolspindlecclwstart": "M13",
+              "toolspindlestop": "M15"
             },
             {
               "toolnumber": 3,
-              "tooltype": 1,
+              "tooltype": "MILL",
               "xmirrorfortoolpath": false,
               "ktoolvector": [1, 0, 0],
               "workplane": [1, 0, 0],
-              "spindleclwstart": "M23",
-              "spindlecclwstart": "M24",
-              "spindlestop": "M25",
-              "mainspindletocaxisstart": "M50",
-              "mainspindletocaxisstop": "M51",
+              "toolspindleclwstart": "M23",
+              "toolspindlecclwstart": "M24",
+              "toolspindlestop": "M25",
               "toolcompleft": "G41",
               "toolcompright": "G42",
               "toolcompoff": "G40"
             },
             {
               "toolnumber": 5,
-              "tooltype": 1,
+              "tooltype": "MILL",
               "xmirrorfortoolpath": false,
               "ktoolvector": [0, 0, -1],
               "workplane": [0, 0, 1],
-              "spindleclwstart": "M43",
-              "spindlecclwstart": "M44",
-              "spindlestop": "M45",
-              "mainspindletocaxisstart": "M50",
-              "mainspindletocaxisstop": "M51",
+              "toolspindleclwstart": "M43",
+              "toolspindlecclwstart": "M44",
+              "toolspindlestop": "M45",
               "toolcompleft": "G41",
               "toolcompright": "G42",
               "toolcompoff": "G40"
@@ -86,52 +104,47 @@
         },
         "2": {
           "toolchangepointxforT0": -20,
-          "ipathvector": [1, 0, 0],
           "listoftools": [
             {
               "toolnumber": 31,
-              "tooltype": 0,
+              "tooltype": "TURN",
               "xmirrorfortoolpath": false,
               "workplane": [0, 1, 0],
-              "spindleclwstart": "M104",
-              "spindlecclwstart": "M103",
-              "spindlestop": "M105"
+              "toolspindleclwstart": "M104",
+              "toolspindlecclwstart": "M103",
+              "toolspindlestop": "M105"
             },
             {
               "toolnumber": 32,
-              "tooltype": 0,
+              "tooltype": "TURN",
               "xmirrorfortoolpath": false,
               "workplane": [0, 1, 0],
-              "spindleclwstart": "M114",
-              "spindlecclwstart": "M113",
-              "spindlestop": "M115"
+              "toolspindleclwstart": "M114",
+              "toolspindlecclwstart": "M113",
+              "toolspindlestop": "M115"
             },
             {
               "toolnumber": 33,
-              "tooltype": 1,
+              "tooltype": "MILL",
               "xmirrorfortoolpath": false,
               "ktoolvector": [-1, 0, 0],
               "workplane": [1, 0, 0],
-              "spindleclwstart": "M123",
-              "spindlecclwstart": "M124",
-              "spindlestop": "M125",
-              "mainspindletocaxisstart": "M150",
-              "mainspindletocaxisstop": "M151",
+              "toolspindleclwstart": "M123",
+              "toolspindlecclwstart": "M124",
+              "toolspindlestop": "M125",
               "toolcompleft": "G41",
               "toolcompright": "G42",
               "toolcompoff": "G40"
             },
             {
               "toolnumber": 35,
-              "tooltype": 1,
+              "tooltype": "MILL",
               "xmirrorfortoolpath": false,
               "ktoolvector": [0, 0, 1],
               "workplane": [0, 0, 1],
-              "spindleclwstart": "M143",
-              "spindlecclwstart": "M144",
-              "spindlestop": "M145",
-              "mainspindletocaxisstart": "M150",
-              "mainspindletocaxisstop": "M151",
+              "toolspindleclwstart": "M143",
+              "toolspindlecclwstart": "M144",
+              "toolspindlestop": "M145",
               "toolcompleft": "G41",
               "toolcompright": "G42",
               "toolcompoff": "G40"
@@ -140,52 +153,47 @@
         },
         "3": {
           "toolchangepointxforT0": 20,
-          "ipathvector": [-1, 0, 0],
           "listoftools": [
             {
               "toolnumber": 11,
-              "tooltype": 0,
+              "tooltype": "TURN",
               "xmirrorfortoolpath": true,
               "workplane": [0, 1, 0],
-              "spindleclwstart": "M204",
-              "spindlecclwstart": "M203",
-              "spindlestop": "M205"
+              "toolspindleclwstart": "M204",
+              "toolspindlecclwstart": "M203",
+              "toolspindlestop": "M205"
             },
             {
               "toolnumber": 12,
-              "tooltype": 0,
+              "tooltype": "TURN",
               "xmirrorfortoolpath": true,
               "workplane": [0, 1, 0],
-              "spindleclwstart": "M214",
-              "spindlecclwstart": "M213",
-              "spindlestop": "M215"
+              "toolspindleclwstart": "M214",
+              "toolspindlecclwstart": "M213",
+              "toolspindlestop": "M215"
             },
             {
               "toolnumber": 13,
-              "tooltype": 1,
+              "tooltype": "MILL",
               "xmirrorfortoolpath": true,
               "ktoolvector": [-1, 0, 0],
               "workplane": [1, 0, 0],
-              "spindleclwstart": "M223",
-              "spindlecclwstart": "M224",
-              "spindlestop": "M225",
-              "mainspindletocaxisstart": "M250",
-              "mainspindletocaxisstop": "M251",
+              "toolspindleclwstart": "M223",
+              "toolspindlecclwstart": "M224",
+              "toolspindlestop": "M225",
               "toolcompleft": "G41",
               "toolcompright": "G42",
               "toolcompoff": "G40"
             },
             {
               "toolnumber": 15,
-              "tooltype": 1,
+              "tooltype": "MILL",
               "xmirrorfortoolpath": true,
               "ktoolvector": [0, 0, -1],
               "workplane": [0, 0, 1],
-              "spindleclwstart": "M243",
-              "spindlecclwstart": "M244",
-              "spindlestop": "M245",
-              "mainspindletocaxisstart": "M250",
-              "mainspindletocaxisstop": "M251",
+              "toolspindleclwstart": "M243",
+              "toolspindlecclwstart": "M244",
+              "toolspindlestop": "M245",
               "toolcompleft": "G41",
               "toolcompright": "G42",
               "toolcompoff": "G40"

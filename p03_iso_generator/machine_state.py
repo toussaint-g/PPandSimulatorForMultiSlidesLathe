@@ -20,6 +20,10 @@ class WriterState:
     spindle_unit: Optional[SpindleUnit] = None
     spindle_direction: Optional[SpindleDirection] = None
     spindle_on: bool = False
+    spindle_number: Optional[int] = None
+    spindle_vector_i: Optional[float] = None
+    spindle_vector_j: Optional[float] = None
+    spindle_vector_k: Optional[float] = None
     
     tool_comment: Optional[str] = None
     tool_number: Optional[int] = None
