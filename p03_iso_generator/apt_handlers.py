@@ -155,6 +155,7 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     tool_type = ToolType(str(tool_tokens[-1]).strip().upper())
     state.tool_type = tool_type
 
+    # On verifie que le type d'outil dans l'APT correspond a celui declare dans la config machine pour eviter les incoherences.
     json_tool_type = iso_writer.machine.get_tool_type(state.tool_number)
     if json_tool_type != tool_type:
         raise ValueError(
@@ -163,11 +164,16 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
         )
     
 
-    if (previous_tool_number is not None
-        and iso_writer.machine.get_code_for_tool_spindle(previous_tool_number) != iso_writer.machine.get_code_for_tool_spindle(state.tool_number)
-        and state.spindle_on):
-        iso_writer.spindle_stop(previous_tool_number)
-        state.spindle_on = False
+
+
+    # Si tool_type == MILL, on gère l'outil.
+    # Si tool_type == TURN, on gère la broche.
+    if previous_tool_number is not None and state.spindle_on:
+        previous_spindle_code = iso_writer.get_spindle_code(previous_tool_number, state.spindle_number)
+        new_spindle_code = iso_writer.get_spindle_code(state.tool_number, state.spindle_number)
+        if previous_spindle_code != new_spindle_code:
+            iso_writer.spindle_stop(previous_tool_number, state.spindle_number)
+            state.spindle_on = False
 
     # Avant le changement outil, on degage uniquement X puis on remet C a zero.
     state.position_x = iso_writer.machine.get_tool_change_point_x_for_t0()
@@ -183,35 +189,17 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
         )
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def h_spindle_name(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Met a jour le numero de broche."""
     # Exemple accepte : SPINDL_NAME/NAME,BP_PATH1,NUMB,1
     spindle_tokens = csv_tokens(argument_text)
     spindle_number = int(spindle_tokens[3])
-    spindle_vector = iso_writer.machine.get_spindle_vector(str(spindle_number))
+    spindle_vector = iso_writer.machine.get_spindle_vector(spindle_number)
     spindle_i, spindle_j, spindle_k = _validate_spindle_vector(spindle_vector, spindle_number)
     state.spindle_number = spindle_number
     state.spindle_vector_i = spindle_i
     state.spindle_vector_j = spindle_j
     state.spindle_vector_k = spindle_k
-
-
-
-
 
 
 def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
@@ -225,7 +213,7 @@ def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
     state.spindle_unit = spindle_unit
     state.spindle_direction = spindle_direction
     state.spindle_on = True
-    iso_writer.spindle_start(state.tool_number, spindle_speed, spindle_unit, spindle_direction)
+    iso_writer.spindle_start(state.tool_number, state.spindle_number, spindle_speed, spindle_unit, spindle_direction)
 
 
 def h_rapid(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
@@ -369,7 +357,7 @@ def h_helical(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
 
 def h_fini(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Termine le programme ISO."""
-    iso_writer.footer(state.tool_number)
+    iso_writer.footer(state.tool_number, state.spindle_number)
 
 
 def h_default(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:

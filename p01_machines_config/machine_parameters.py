@@ -63,6 +63,24 @@ def _extract_vector(vector: object, field_name: str) -> list[float]:
         raise ValueError(f"MachineConfigError: vecteur {field_name} invalide")
 
 
+def _get_numbered_config(configs: JsonDict, item_number: int, item_label: str) -> JsonDict | None:
+    """Retourne une configuration indexee par numero dans le JSON."""
+    item_config = configs.get(str(item_number))
+    if item_config is None:
+        return None
+    if not isinstance(item_config, dict):
+        raise ValueError(f"MachineConfigError: configuration {item_label} {item_number} invalide")
+    return item_config
+
+
+def _get_required_numbered_config(configs: JsonDict, item_number: int, item_label: str) -> JsonDict:
+    """Retourne une configuration indexee par numero ou leve une erreur."""
+    item_config = _get_numbered_config(configs, item_number, item_label)
+    if item_config is None:
+        raise ValueError(f"MachineConfigError: {item_label} {item_number} introuvable")
+    return item_config
+
+
 @dataclass
 class MachineParameters:
     """Regroupe les donnees utiles extraites du JSON machine pour un canal."""
@@ -93,60 +111,64 @@ class MachineParameters:
     xz_work_plane_code: str
     yz_work_plane_code: str
     channel_tool_change_point_x_for_t0: float
-    channel_tools: list[JsonDict]
+    channel_tools: JsonDict
     machine_spindles: JsonDict
     ipartvector: list[float] | None
 
-    def get_spindle_config(self, spindle_name: str) -> JsonDict | None:
+    def get_spindle_config(self, spindle_number: int) -> JsonDict | None:
         """Retourne la configuration JSON de la broche demandee."""
-        spindle_config = self.machine_spindles.get(str(spindle_name))
-        if isinstance(spindle_config, dict):
-            return spindle_config
-        return None
+        return _get_numbered_config(self.machine_spindles, spindle_number, "broche")
 
-    def get_required_spindle_config(self, spindle_name: str) -> JsonDict:
+    def get_required_spindle_config(self, spindle_number: int) -> JsonDict:
         """Retourne la configuration JSON de la broche ou leve une erreur."""
-        spindle_config = self.get_spindle_config(spindle_name)
-        if spindle_config is None:
-            raise ValueError(f"MachineConfigError: broche {spindle_name} introuvable")
-        return spindle_config
+        return _get_required_numbered_config(self.machine_spindles, spindle_number, "broche")
 
-    def get_spindle_vector(self, spindle_name: str) -> list[float]:
+    def get_spindle_vector(self, spindle_number: int) -> list[float]:
         """Retourne le vecteur d'orientation declare pour la broche."""
-        spindle_config = self.get_required_spindle_config(spindle_name)
+        spindle_config = self.get_required_spindle_config(spindle_number)
         return _extract_vector(spindle_config.get("ispindlevector"), "ispindlevector")
 
-    def get_code_for_spindle_c_axis(self, spindle_name: str, c_axis_on: bool) -> str:
+    def get_code_for_spindle_c_axis(self, spindle_number: int, c_axis_on: bool) -> str:
         """Retourne le code ISO de passage broche/axe C pour une broche machine."""
-        spindle_config = self.get_required_spindle_config(spindle_name)
+        spindle_config = self.get_required_spindle_config(spindle_number)
         code_key = "spindletocaxison" if c_axis_on else "spindletocaxisoff"
         spindle_code = spindle_config.get(code_key)
         if not spindle_code:
-            raise ValueError(f"MachineConfigError: code {code_key} absent pour la broche {spindle_name}")
+            raise ValueError(f"MachineConfigError: code {code_key} absent pour la broche {spindle_number}")
         return normalize_gm_code(str(spindle_code))
 
-    def get_code_for_spindle_brake(self, spindle_name: str, brake_on: bool) -> str:
+    def get_code_for_spindle_brake(self, spindle_number: int, brake_on: bool) -> str:
         """Retourne le code ISO de frein de broche pour une broche machine."""
-        spindle_config = self.get_required_spindle_config(spindle_name)
+        spindle_config = self.get_required_spindle_config(spindle_number)
         code_key = "spindlebrakeon" if brake_on else "spindlebrakeoff"
         spindle_code = spindle_config.get(code_key)
         if not spindle_code:
-            raise ValueError(f"MachineConfigError: code {code_key} absent pour la broche {spindle_name}")
+            raise ValueError(f"MachineConfigError: code {code_key} absent pour la broche {spindle_number}")
+        return normalize_gm_code(str(spindle_code))
+
+    def get_code_for_turn_spindle(self, spindle_number: int, spindle_direction: SpindleDirection | None = None) -> str:
+        """Retourne le code ISO de broche de tournage associe a une broche machine."""
+        spindle_config = self.get_required_spindle_config(spindle_number)
+        if spindle_direction == SpindleDirection.CLW:
+            spindle_code = spindle_config.get("toolspindleclwstart")
+        elif spindle_direction == SpindleDirection.CCLW:
+            spindle_code = spindle_config.get("toolspindlecclwstart")
+        elif spindle_direction is None:
+            spindle_code = spindle_config.get("toolspindlestop")
+        else:
+            raise ValueError(f"MachineConfigError: sens de broche '{spindle_direction}' non supporte")
+
+        if not spindle_code:
+            raise ValueError(f"MachineConfigError: code de broche absent pour la broche {spindle_number}")
         return normalize_gm_code(str(spindle_code))
 
     def get_tool_config(self, tool_number: int) -> JsonDict | None:
         """Retourne la configuration JSON de l'outil pour le canal courant."""
-        for tool_config in self.channel_tools:
-            if tool_config.get("toolnumber") == tool_number:
-                return tool_config
-        return None
+        return _get_numbered_config(self.channel_tools, tool_number, "outil")
 
     def get_required_tool_config(self, tool_number: int) -> JsonDict:
         """Retourne la configuration JSON de l'outil ou leve une erreur s'il est introuvable."""
-        tool_config = self.get_tool_config(tool_number)
-        if tool_config is None:
-            raise ValueError(f"MachineConfigError: outil {tool_number} introuvable dans le canal {self.channel_name}")
-        return tool_config
+        return _get_required_numbered_config(self.channel_tools, tool_number, "outil")
 
     def get_tool_type(self, tool_number: int) -> ToolType:
         """Retourne le type d'outil declare dans le JSON machine."""

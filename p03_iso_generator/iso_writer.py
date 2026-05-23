@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, SpindleDirection, SpindleUnit, ToolComp
+from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, SpindleDirection, SpindleUnit, ToolComp, ToolType
 from p01_machines_config.machine_parameters import JsonDict, MachineParameters
 from p03_iso_generator.iso_format import format_float_to_iso
 from p03_iso_generator.machine_state import EmissionState
@@ -42,9 +42,9 @@ class IsoWriter:
         self.emit(f"{self.machine.program_prefix}{self.machine.channel_name}000")
 
 
-    def footer(self, tool_number: int) -> None:
+    def footer(self, tool_number: int, spindle_number: Optional[int] = None) -> None:
         """Ajoute le pied de page minimal pour un programme de fraisage."""
-        self.emit(self.machine.get_code_for_tool_spindle(tool_number))
+        self.emit(self.get_spindle_code(tool_number, spindle_number))
         self.emit(f"{self.machine.endprogram_code}")
         self.emit(f"{self.machine.startandendfile_character}")
 
@@ -74,26 +74,47 @@ class IsoWriter:
         self.emit(f"{self.machine.toolname_prefix}{tool_number:02d}{tool_number:02d}")
 
 
-
-
-
-
-
-
-
     # TODO: Gestion surface constante (G96/G97) pas prise en compte pour l'instant, a voir si on en a besoin.
-    def spindle_start(self, tool_number: int, spindle_speed: float, spindle_unit: SpindleUnit, spindle_direction: SpindleDirection) -> None:
+    def get_spindle_code(
+        self,
+        tool_number: int,
+        spindle_number: Optional[int],
+        spindle_direction: SpindleDirection | None = None,
+    ) -> str:
+        """Retourne le code de broche selon le type d'outil actif."""
+        if self.machine.get_tool_type(tool_number) == ToolType.TURN:
+            if spindle_number is None:
+                raise ValueError("MachineConfigError: SPINDL_NAME absent pour un outil TURN")
+            return self.machine.get_code_for_turn_spindle(spindle_number, spindle_direction)
+        return self.machine.get_code_for_tool_spindle(tool_number, spindle_direction)
+
+
+    def spindle_start(
+        self,
+        tool_number: int,
+        spindle_number: Optional[int],
+        spindle_speed: float,
+        spindle_unit: SpindleUnit,
+        spindle_direction: SpindleDirection,
+    ) -> None:
         """Demarre la broche avec la vitesse et la direction specifiees."""
-        if self.emission_state.last_spindle_speed != spindle_speed or self.emission_state.last_spindle_direction != spindle_direction or self.emission_state.last_tool_number != tool_number:
-            self.emit(f"{self.machine.get_code_for_tool_spindle(tool_number, spindle_direction)} {self.machine.spindle_speed_prefix}{format_float_to_iso(spindle_speed)}")
+        if (
+            self.emission_state.last_spindle_speed != spindle_speed
+            or self.emission_state.last_spindle_direction != spindle_direction
+            or self.emission_state.last_tool_number != tool_number
+            or self.emission_state.last_spindle_number != spindle_number
+        ):
+            spindle_code = self.get_spindle_code(tool_number, spindle_number, spindle_direction)
+            self.emit(f"{spindle_code} {self.machine.spindle_speed_prefix}{format_float_to_iso(spindle_speed)}")
             self.emission_state.last_spindle_speed = spindle_speed
             self.emission_state.last_spindle_direction = spindle_direction
             self.emission_state.last_tool_number = tool_number
+            self.emission_state.last_spindle_number = spindle_number
 
 
-    def spindle_stop(self, tool_number: int) -> None:
+    def spindle_stop(self, tool_number: int, spindle_number: Optional[int] = None) -> None:
         """Arrete la broche."""
-        self.emit(self.machine.get_code_for_tool_spindle(tool_number))
+        self.emit(self.get_spindle_code(tool_number, spindle_number))
 
 
     def linear_move(self, tool_number: int, motion_mode: MotionMode, cutcom_mode: ToolComp, feedrate_value: float,

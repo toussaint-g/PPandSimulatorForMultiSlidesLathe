@@ -57,6 +57,7 @@ class EmissionState:
     last_feedrate_unit: Optional[FeedrateUnit] = None
 
     last_tool_number: Optional[int] = None
+    last_spindle_number: Optional[int] = None
     last_spindle_speed: Optional[float] = None
     last_spindle_direction: Optional[SpindleDirection] = None
 
