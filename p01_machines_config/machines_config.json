@@ -36,9 +36,9 @@
           "spindletocaxisoff": "M51",
           "spindlebrakeon": "M500",
           "spindlebrakeoff": "M501",
-          "toolspindleclwstart": "M4",
-          "toolspindlecclwstart": "M3",
-          "toolspindlestop": "M5"
+          "spindleclwstart": "M4",
+          "spindlecclwstart": "M3",
+          "spindlestop": "M5"
         },
         "2": {
           "ispindlevector": [1, 0, 0],
@@ -46,9 +46,9 @@
           "spindletocaxisoff": "M151",
           "spindlebrakeon": "M600",
           "spindlebrakeoff": "M601",
-          "toolspindleclwstart": "M104",
-          "toolspindlecclwstart": "M103",
-          "toolspindlestop": "M105"
+          "spindleclwstart": "M104",
+          "spindlecclwstart": "M103",
+          "spindlestop": "M105"
         },
         "3": {
           "ispindlevector": [-1, 0, 0],
@@ -56,9 +56,9 @@
           "spindletocaxisoff": "M251",
           "spindlebrakeon": "M700",
           "spindlebrakeoff": "M701",
-          "toolspindleclwstart": "M204",
-          "toolspindlecclwstart": "M203",
-          "toolspindlestop": "M205"
+          "spindleclwstart": "M204",
+          "spindlecclwstart": "M203",
+          "spindlestop": "M205"
         }
       },
       "listofchannels": {
@@ -80,9 +80,9 @@
               "xmirrorfortoolpath": false,
               "ktoolvector": [1, 0, 0],
               "workplane": [1, 0, 0],
-              "toolspindleclwstart": "M23",
-              "toolspindlecclwstart": "M24",
-              "toolspindlestop": "M25",
+              "toolclwstart": "M23",
+              "toolcclwstart": "M24",
+              "toolstop": "M25",
               "toolcompleft": "G41",
               "toolcompright": "G42",
               "toolcompoff": "G40"
@@ -92,9 +92,9 @@
               "xmirrorfortoolpath": false,
               "ktoolvector": [0, 0, -1],
               "workplane": [0, 0, 1],
-              "toolspindleclwstart": "M43",
-              "toolspindlecclwstart": "M44",
-              "toolspindlestop": "M45",
+              "toolclwstart": "M43",
+              "toolcclwstart": "M44",
+              "toolstop": "M45",
               "toolcompleft": "G41",
               "toolcompright": "G42",
               "toolcompoff": "G40"
@@ -119,9 +119,9 @@
               "xmirrorfortoolpath": false,
               "ktoolvector": [-1, 0, 0],
               "workplane": [1, 0, 0],
-              "toolspindleclwstart": "M123",
-              "toolspindlecclwstart": "M124",
-              "toolspindlestop": "M125",
+              "toolclwstart": "M123",
+              "toolcclwstart": "M124",
+              "toolstop": "M125",
               "toolcompleft": "G41",
               "toolcompright": "G42",
               "toolcompoff": "G40"
@@ -131,9 +131,9 @@
               "xmirrorfortoolpath": false,
               "ktoolvector": [0, 0, 1],
               "workplane": [0, 0, 1],
-              "toolspindleclwstart": "M143",
-              "toolspindlecclwstart": "M144",
-              "toolspindlestop": "M145",
+              "toolclwstart": "M143",
+              "toolcclwstart": "M144",
+              "toolstop": "M145",
               "toolcompleft": "G41",
               "toolcompright": "G42",
               "toolcompoff": "G40"
@@ -158,9 +158,9 @@
               "xmirrorfortoolpath": true,
               "ktoolvector": [-1, 0, 0],
               "workplane": [1, 0, 0],
-              "toolspindleclwstart": "M223",
-              "toolspindlecclwstart": "M224",
-              "toolspindlestop": "M225",
+              "toolclwstart": "M223",
+              "toolcclwstart": "M224",
+              "toolstop": "M225",
               "toolcompleft": "G41",
               "toolcompright": "G42",
               "toolcompoff": "G40"
@@ -170,9 +170,9 @@
               "xmirrorfortoolpath": true,
               "ktoolvector": [0, 0, -1],
               "workplane": [0, 0, 1],
-              "toolspindleclwstart": "M243",
-              "toolspindlecclwstart": "M244",
-              "toolspindlestop": "M245",
+              "toolclwstart": "M243",
+              "toolcclwstart": "M244",
+              "toolstop": "M245",
               "toolcompleft": "G41",
               "toolcompright": "G42",
               "toolcompoff": "G40"

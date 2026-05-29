@@ -15,14 +15,14 @@ class MotionMode(str, Enum):
     WORKING = "WORKING"
 
 
-class SpindleUnit(str, Enum):
-    """Enum pour memoriser les unites de broche autorisees."""
+class RotationUnit(str, Enum):
+    """Enum pour memoriser les unites de rotation autorisees."""
     RPM = "RPM"
     SMM = "SMM"
 
 
-class SpindleDirection(str, Enum):
-    """Enum pour memoriser les sens de rotation de broche autorises."""
+class RotationDirection(str, Enum):
+    """Enum pour memoriser les sens de rotation autorises."""
     CLW = "CLW"
     CCLW = "CCLW"
 

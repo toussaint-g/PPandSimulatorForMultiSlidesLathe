@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 from typing import TypeAlias
-from p01_machines_config.machine_enums import SpindleDirection, ToolComp, ToolType
+from p01_machines_config.machine_enums import RotationDirection, ToolComp, ToolType
 
 
 JsonDict: TypeAlias = dict[str, object]
@@ -146,21 +146,21 @@ class MachineParameters:
             raise ValueError(f"MachineConfigError: code {code_key} absent pour la broche {spindle_number}")
         return normalize_gm_code(str(spindle_code))
 
-    def get_code_for_turn_spindle(self, spindle_number: int, spindle_direction: SpindleDirection | None = None) -> str:
-        """Retourne le code ISO de broche de tournage associe a une broche machine."""
+    def get_code_for_turn_spindle(self, spindle_number: int, rotation_direction: RotationDirection | None = None) -> str:
+        """Retourne le code ISO pour la mise en rotation d'une broche."""
         spindle_config = self.get_required_spindle_config(spindle_number)
-        if spindle_direction == SpindleDirection.CLW:
-            spindle_code = spindle_config.get("toolspindleclwstart")
-        elif spindle_direction == SpindleDirection.CCLW:
-            spindle_code = spindle_config.get("toolspindlecclwstart")
-        elif spindle_direction is None:
-            spindle_code = spindle_config.get("toolspindlestop")
+        if rotation_direction == RotationDirection.CLW:
+            rotation_code = spindle_config.get("spindleclwstart")
+        elif rotation_direction == RotationDirection.CCLW:
+            rotation_code = spindle_config.get("spindlecclwstart")
+        elif rotation_direction is None:
+            rotation_code = spindle_config.get("spindlestop")
         else:
-            raise ValueError(f"MachineConfigError: sens de broche '{spindle_direction}' non supporte")
+            raise ValueError(f"MachineConfigError: sens de broche '{rotation_direction}' non supporte")
 
-        if not spindle_code:
-            raise ValueError(f"MachineConfigError: code de broche absent pour la broche {spindle_number}")
-        return normalize_gm_code(str(spindle_code))
+        if not rotation_code:
+            raise ValueError(f"MachineConfigError: code de rotation absent pour la broche {spindle_number}")
+        return normalize_gm_code(str(rotation_code))
 
     def get_tool_config(self, tool_number: int) -> JsonDict | None:
         """Retourne la configuration JSON de l'outil pour le canal courant."""
@@ -193,23 +193,23 @@ class MachineParameters:
         """Retourne le point de changement outil initial tant qu'aucun outil n'est actif."""
         return self.channel_tool_change_point_x_for_t0, 0.0, 0.0
 
-    def get_code_for_tool_spindle(self, tool_number: int, spindle_direction: SpindleDirection | None = None) -> str:
-        """Retourne le code ISO de broche associe a l'outil et au sens demandes."""
+    def get_code_for_tool_rotation(self, tool_number: int, rotation_direction: RotationDirection | None = None) -> str:
+        """Retourne le code ISO pour la mise en rotation d'un outil tournant."""
         tool_config = self.get_required_tool_config(tool_number)
-        if spindle_direction == SpindleDirection.CLW:
-            spindle_code = tool_config.get("toolspindleclwstart")
-        elif spindle_direction == SpindleDirection.CCLW:
-            spindle_code = tool_config.get("toolspindlecclwstart")
-        elif spindle_direction is None:
-            spindle_code = tool_config.get("toolspindlestop")
+        if rotation_direction == RotationDirection.CLW:
+            rotation_code = tool_config.get("toolclwstart")
+        elif rotation_direction == RotationDirection.CCLW:
+            rotation_code = tool_config.get("toolcclwstart")
+        elif rotation_direction is None:
+            rotation_code = tool_config.get("toolstop")
         else:
-            raise ValueError(f"MachineConfigError: sens de broche '{spindle_direction}' non supporte")
+            raise ValueError(f"MachineConfigError: sens de broche '{rotation_direction}' non supporte")
 
-        if not spindle_code:
+        if not rotation_code:
             raise ValueError(
-                f"MachineConfigError: code de broche absent pour l'outil {tool_number} dans le canal {self.channel_name}"
+                f"MachineConfigError: code de rotation absent pour l'outil {tool_number}."
             )
-        return normalize_gm_code(str(spindle_code))
+        return normalize_gm_code(str(rotation_code))
 
     def get_work_plane_code_from_vector(self, workplane_vector: object) -> str:
         """Retourne le code G17/G18/G19 correspondant au vecteur de plan declare dans le JSON."""

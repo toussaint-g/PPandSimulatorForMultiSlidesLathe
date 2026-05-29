@@ -5,8 +5,13 @@
 
 ## Partie PP:
 ### Prochaines actions:
-- Insertion C0 lors du passage du mode tournage au mode fraisage.
+- Gestion des changements d'outils:
+    - Supprimer les tooltype du json machine (pour se baser sur l'apt uniquement).
+    - Lors de la lecture d'un LOADTL: recuperer le numéro et le type de l'outil et ajouter une var de passage boolean (car on ne veut rien emettre lors de sa lecture).
+    - Lors de la lecture d'un SPINDL_NAME: on recupere le numéro de broche uniquement (pas d'emission).
+    - Lors de la lecture d'un SPINDL: on suit le plan defini sur l'Excel et on remet la var de passage sur False.
 - Gestion des synchronisations des canaux.
+### Actions futures:
 - Creer un HTML pour l'affichage des configurations machines. Structurer avec JSON pour l'interpretation des parametres du JSON machine et leurs valeurs.
 - Creer un HTML pour la generation des gammes avec vue des trajectoires en 3D, etc...
 ### Points a verifier (dans app):
@@ -24,6 +29,7 @@
 
 ## Partie analyse:
 ### Prochaines actions:
+### Actions futures:
 ### Points a verifier (dans app):
 ### Points a verifier (dans CATIA):
 ### Ameliorations a prevoir:
@@ -32,6 +38,7 @@
 
 ## Partie viewer:
 ### Prochaines actions:
+### Actions futures:
 ### Points a verifier (dans app):
 ### Points a verifier (dans CATIA):
 ### Ameliorations a prevoir:

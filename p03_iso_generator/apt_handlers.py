@@ -6,7 +6,7 @@ import math
 from functools import partial
 from typing import Callable
 
-from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, SpindleDirection, SpindleUnit, ToolComp, ToolType
+from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, RotationDirection, RotationUnit, ToolComp, ToolType
 from p03_iso_generator.apt_parser import csv_floats, csv_tokens
 from p03_iso_generator.helical import emit_helical_move, emit_helical_not_supported, parse_helical_definition, solve_helical_definition
 from p03_iso_generator.iso_writer import IsoWriter
@@ -150,43 +150,58 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     # Exemple fraisage : LOADTL/10,ADJUST,1,SPINDL,15915.494300,MILL
     # Exemple tournage : LOADTL/1,ADJUST,9,TURN
     tool_tokens = csv_tokens(argument_text)
-    previous_tool_number = state.tool_number
-    state.tool_number = int(tool_tokens[0])
+    tool_number = int(tool_tokens[0])
     tool_type = ToolType(str(tool_tokens[-1]).strip().upper())
+    state.tool_number = tool_number
     state.tool_type = tool_type
 
     # On verifie que le type d'outil dans l'APT correspond a celui declare dans la config machine pour eviter les incoherences.
     json_tool_type = iso_writer.machine.get_tool_type(state.tool_number)
-    if json_tool_type != tool_type:
+    if json_tool_type != state.tool_type:
         raise ValueError(
-            f"MachineConfigError: type outil LOADTL {tool_type.value} different du JSON {json_tool_type.value} "
+            f"MachineConfigError: type outil LOADTL {state.tool_type.value} different du JSON {json_tool_type.value} "
             f"pour l'outil {state.tool_number}"
         )
-    
+    # Avant le changement d'outil, on deplace la machine au point de changement d'outil pour eviter les collisions.
+    state.position_x = iso_writer.machine.get_tool_change_point_x_for_t0()
+    # Traitement du tool change
+    state.tool_change_processing = True
+
+
+    # Arret de la broche si outil précédent était un MILL.
+    # if previous_tool_number is not None and previous_tool_type == ToolType.MILL:
+    #     iso_writer.spindle_stop(previous_tool_number)
+    #     state.spindle_on = False
+
 
 
 
     # Si tool_type == MILL, on gère l'outil.
     # Si tool_type == TURN, on gère la broche.
-    if previous_tool_number is not None and state.spindle_on:
-        previous_spindle_code = iso_writer.get_spindle_code(previous_tool_number, state.spindle_number)
-        new_spindle_code = iso_writer.get_spindle_code(state.tool_number, state.spindle_number)
-        if previous_spindle_code != new_spindle_code:
-            iso_writer.spindle_stop(previous_tool_number, state.spindle_number)
-            state.spindle_on = False
+    # if previous_tool_number is not None and state.spindle_on:
+    #     previous_spindle_code = iso_writer.get_spindle_code(previous_tool_number, previous_spindle_number)
+    #     new_spindle_code = iso_writer.get_spindle_code(state.tool_number, state.spindle_number)
+    #     if previous_spindle_code != new_spindle_code:
+    #         iso_writer.spindle_stop(previous_tool_number, previous_spindle_number)
+    #         state.spindle_on = False
 
     # Avant le changement outil, on degage uniquement X puis on remet C a zero.
-    state.position_x = iso_writer.machine.get_tool_change_point_x_for_t0()
-    state.position_y = 0.0
-    state.position_c = 0.0
-    iso_writer.tool_change(
-        state.tool_number,
-        state.tool_comment,
-        state.position_x,
-        state.position_y,
-        state.position_z,
-        state.position_c
-        )
+    # state.position_x = iso_writer.machine.get_tool_change_point_x_for_t0()
+    # state.position_y = 0.0
+    # state.position_c = 0.0
+    # iso_writer.apply_tool_update(
+    #     state.tool_comment,
+    #     state.tool_number,
+    #     state.tool_type,
+    #     state.spindle_number,
+    #     state.rotation_speed,
+    #     state.rotation_unit,
+    #     state.rotation_direction,
+    #     state.position_x,
+    #     state.position_y,
+    #     state.position_z,
+    #     state.position_c
+    #     )
 
 
 def h_spindle_name(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
@@ -205,15 +220,39 @@ def h_spindle_name(apt_keyword: str, argument_text: str, state: WriterState, iso
 def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Met a jour la vitesse de broche, l'unite et la direction, et emet les lignes ISO correspondantes si necessaire."""
     # Exemple accepte : SPINDL/3000,CLW
-    spindle_tokens = csv_tokens(argument_text)
-    spindle_speed = float(spindle_tokens[0])
-    spindle_unit = SpindleUnit(spindle_tokens[1])
-    spindle_direction = SpindleDirection(spindle_tokens[2])
-    state.spindle_speed = spindle_speed
-    state.spindle_unit = spindle_unit
-    state.spindle_direction = spindle_direction
-    state.spindle_on = True
-    iso_writer.spindle_start(state.tool_number, state.spindle_number, spindle_speed, spindle_unit, spindle_direction)
+    rotation_tokens = csv_tokens(argument_text)
+    rotation_speed = float(rotation_tokens[0])
+    rotation_unit = SpindleUnit(rotation_tokens[1])
+    rotation_direction = SpindleDirection(rotation_tokens[2])
+    state.rotation_speed = rotation_speed
+    state.rotation_unit = rotation_unit
+    state.rotation_direction = rotation_direction
+
+
+    # Si traitement du changement d'outil.
+    iso_writer.apply_tool_update(
+        state.tool_comment,
+        state.tool_number,
+        state.tool_type,
+        state.spindle_number,
+        state.rotation_speed,
+        state.rotation_unit,
+        state.rotation_direction,
+        state.position_x,
+        state.position_y,
+        state.position_z,
+        state.position_c,
+        state.tool_change_processing,
+            )
+    
+    if state.tool_type == ToolType.MILL:
+        state.position_c = 0.0
+    elif state.tool_type == ToolType.TURN:
+        state.position_y = 0.0
+
+    state.tool_change_processing = False
+
+
 
 
 def h_rapid(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
@@ -228,7 +267,7 @@ def h_feedrat(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
     feedrate_value = float(feedrate_tokens[0])
     feedrate_unit = FeedrateUnit(feedrate_tokens[1])
 
-    # Si l'unite d'avance a change, on l'ajoute a la ligne de mouvement.
+    # Si l'avance a change, on l'ajoute a la ligne de mouvement.
     if state.feedrate_value != feedrate_value:
         state.feedrate_value = feedrate_value
 
@@ -371,6 +410,9 @@ DISPATCH: dict[str, Handler] = {
     # Broches
     "SPINDL_NAME": h_spindle_name,
     "SPINDL": h_spindle,
+    # Outils
+    "TPRINT": h_tprint,
+    "LOADTL": h_loadtl,
     # Donnees de coupe
     "FEDRAT": h_feedrat,
     # Trajectoires lineaires
@@ -393,9 +435,6 @@ DISPATCH: dict[str, Handler] = {
     "PPRINT": h_comment,
     # Insertions forcees
     "INSERT": h_insert,
-    # Outils
-    "TPRINT": h_tprint,
-    "LOADTL": h_loadtl,
     # Programme
     "END": h_fini,
 }
