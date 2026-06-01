@@ -340,16 +340,6 @@ class MathematicalFunctions:
         if feedrate == 0:
             raise ValueError("FeedrateError: avance nulle, impossible de calculer le temps de mouvement")
         return distance / feedrate
-    
-    def calculate_coordinates_from_c_axis(self, position_x, position_y, position_c):
-        """ Calcul des coordonnees X et Y en fonction de C"""
-        if self.x_diameter:
-            position_x_for_c_axis = ((position_x / 2) * math.cos(math.radians(position_c)) - position_y * math.sin(math.radians(position_c))) * 2
-            position_y_for_c_axis = (position_x / 2) * math.sin(math.radians(position_c)) + position_y * math.cos(math.radians(position_c))
-        else:
-            position_x_for_c_axis = position_x * math.cos(math.radians(position_c)) - position_y * math.sin(math.radians(position_c))
-            position_y_for_c_axis = position_x * math.sin(math.radians(position_c)) + position_y * math.cos(math.radians(position_c))
-        return (position_x_for_c_axis, position_y_for_c_axis)
 
 
 class Modal:

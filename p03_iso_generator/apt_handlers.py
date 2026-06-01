@@ -168,42 +168,6 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     state.tool_change_processing = True
 
 
-    # Arret de la broche si outil précédent était un MILL.
-    # if previous_tool_number is not None and previous_tool_type == ToolType.MILL:
-    #     iso_writer.spindle_stop(previous_tool_number)
-    #     state.spindle_on = False
-
-
-
-
-    # Si tool_type == MILL, on gère l'outil.
-    # Si tool_type == TURN, on gère la broche.
-    # if previous_tool_number is not None and state.spindle_on:
-    #     previous_spindle_code = iso_writer.get_spindle_code(previous_tool_number, previous_spindle_number)
-    #     new_spindle_code = iso_writer.get_spindle_code(state.tool_number, state.spindle_number)
-    #     if previous_spindle_code != new_spindle_code:
-    #         iso_writer.spindle_stop(previous_tool_number, previous_spindle_number)
-    #         state.spindle_on = False
-
-    # Avant le changement outil, on degage uniquement X puis on remet C a zero.
-    # state.position_x = iso_writer.machine.get_tool_change_point_x_for_t0()
-    # state.position_y = 0.0
-    # state.position_c = 0.0
-    # iso_writer.apply_tool_update(
-    #     state.tool_comment,
-    #     state.tool_number,
-    #     state.tool_type,
-    #     state.spindle_number,
-    #     state.rotation_speed,
-    #     state.rotation_unit,
-    #     state.rotation_direction,
-    #     state.position_x,
-    #     state.position_y,
-    #     state.position_z,
-    #     state.position_c
-    #     )
-
-
 def h_spindle_name(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Met a jour le numero de broche."""
     # Exemple accepte : SPINDL_NAME/NAME,BP_PATH1,NUMB,1
@@ -222,15 +186,14 @@ def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
     # Exemple accepte : SPINDL/3000,CLW
     rotation_tokens = csv_tokens(argument_text)
     rotation_speed = float(rotation_tokens[0])
-    rotation_unit = SpindleUnit(rotation_tokens[1])
-    rotation_direction = SpindleDirection(rotation_tokens[2])
+    rotation_unit = RotationUnit(rotation_tokens[1])
+    rotation_direction = RotationDirection(rotation_tokens[2])
     state.rotation_speed = rotation_speed
     state.rotation_unit = rotation_unit
     state.rotation_direction = rotation_direction
 
-
     # Si traitement du changement d'outil.
-    iso_writer.apply_tool_update(
+    tool_update = iso_writer.apply_tool_update(
         state.tool_comment,
         state.tool_number,
         state.tool_type,
@@ -244,15 +207,13 @@ def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
         state.position_c,
         state.tool_change_processing,
             )
-    
-    if state.tool_type == ToolType.MILL:
-        state.position_c = 0.0
-    elif state.tool_type == ToolType.TURN:
-        state.position_y = 0.0
+
+    if tool_update.position_c is not None:
+        state.position_c = tool_update.position_c
+    if tool_update.position_y is not None:
+        state.position_y = tool_update.position_y
 
     state.tool_change_processing = False
-
-
 
 
 def h_rapid(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:

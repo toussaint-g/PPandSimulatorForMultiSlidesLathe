@@ -6,7 +6,7 @@ from pathlib import Path
 from datetime import datetime
 import tkinter
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox
 from ttkbootstrap import Style
 import ttkbootstrap as tb 
 from PIL import Image, ImageTk

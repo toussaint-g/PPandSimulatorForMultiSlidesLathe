@@ -32,14 +32,6 @@ class MachinesConfigLoader:
         return sorted(MachinesConfigLoader.machines_list.keys())
 
     @staticmethod
-    def get_channels_list():
-        """Retourne la liste des canaux pour la premiere machine disponible"""
-        machine_names = MachinesConfigLoader.get_machines_names()
-        if not machine_names:
-            return []
-        return MachinesConfigLoader.get_channels_list_for_machine(machine_names[0])
-
-    @staticmethod
     def get_channels_list_for_machine(machine_name: str):
         """Retourne la liste des canaux d'une machine donnee"""
         machine_config: JsonDict = MachinesConfigLoader.get_machine(machine_name)
@@ -53,13 +45,6 @@ class MachinesConfigLoader:
         if not machine_names:
             return []
         return MachinesConfigLoader.get_spindles_list_for_machine(machine_names[0])
-
-    @staticmethod
-    def get_spindles_list_for_machine(machine_name: str):
-        """Retourne la liste des broches d'une machine donnee"""
-        machine_config: JsonDict = MachinesConfigLoader.get_machine(machine_name)
-        spindles: JsonDict = machine_config.get('listofspindles', {})  # type: ignore[assignment]
-        return sorted(spindles.keys())
 
     @staticmethod
     def get_machine(machine_name: str) -> JsonDict:

@@ -115,10 +115,6 @@ class MachineParameters:
     machine_spindles: JsonDict
     ipartvector: list[float] | None
 
-    def get_spindle_config(self, spindle_number: int) -> JsonDict | None:
-        """Retourne la configuration JSON de la broche demandee."""
-        return _get_numbered_config(self.machine_spindles, spindle_number, "broche")
-
     def get_required_spindle_config(self, spindle_number: int) -> JsonDict:
         """Retourne la configuration JSON de la broche ou leve une erreur."""
         return _get_required_numbered_config(self.machine_spindles, spindle_number, "broche")
@@ -161,10 +157,6 @@ class MachineParameters:
         if not rotation_code:
             raise ValueError(f"MachineConfigError: code de rotation absent pour la broche {spindle_number}")
         return normalize_gm_code(str(rotation_code))
-
-    def get_tool_config(self, tool_number: int) -> JsonDict | None:
-        """Retourne la configuration JSON de l'outil pour le canal courant."""
-        return _get_numbered_config(self.channel_tools, tool_number, "outil")
 
     def get_required_tool_config(self, tool_number: int) -> JsonDict:
         """Retourne la configuration JSON de l'outil ou leve une erreur s'il est introuvable."""
