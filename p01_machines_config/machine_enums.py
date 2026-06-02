@@ -38,3 +38,10 @@ class ToolComp(str, Enum):
     LEFT = "LEFT"
     RIGHT = "RIGHT"
     OFF = "OFF"
+
+
+class AxisOfRotation(str, Enum):
+    """Enum pour memoriser les axes de rotation autorises."""
+    AAXIS = "AAXIS"
+    BAXIS = "BAXIS"
+    CAXIS = "CAXIS"

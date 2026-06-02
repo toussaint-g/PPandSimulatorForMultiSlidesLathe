@@ -6,7 +6,7 @@ import math
 from functools import partial
 from typing import Callable
 
-from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, RotationDirection, RotationUnit, ToolComp, ToolType
+from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, RotationDirection, RotationUnit, ToolComp, ToolType, AxisOfRotation
 from p03_iso_generator.apt_parser import csv_floats, csv_tokens
 from p03_iso_generator.helical import emit_helical_move, emit_helical_not_supported, parse_helical_definition, solve_helical_definition
 from p03_iso_generator.iso_writer import IsoWriter
@@ -355,6 +355,49 @@ def h_helical(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
     emit_helical_move(helical_solution, state, iso_writer)
 
 
+
+
+
+
+
+
+
+
+
+
+def h_rotabl(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
+    """Met a jour le mode de compensation d'outil et emet les lignes ISO correspondantes si necessaire."""
+    # Exemple accepte : ROTABL/LEFT
+    rotabl_tokens = csv_tokens(argument_text)
+    rotabl_amount = float(rotabl_tokens[0])
+    rotabl_direction = RotationDirection(rotabl_tokens[1])
+    rotabl_axis = AxisOfRotation(rotabl_tokens[2])
+
+    # Si CAXIS, on traite sinon, message d'erreur.
+    if rotabl_axis != AxisOfRotation.CAXIS:
+        # On applique la rotation a l'axe C en fonction du sens de rotation et de l'angle de rotation.
+        if rotabl_direction == RotationDirection.CLW:
+            state.position_c += rotabl_amount
+        else:
+            state.position_c -= rotabl_amount
+    else:
+        iso_writer.comment(f"ROTABL non supporte pour axe {rotabl_axis.value}")
+        return
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def h_fini(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Termine le programme ISO."""
     iso_writer.footer(state.tool_number, state.spindle_number)
@@ -383,6 +426,8 @@ DISPATCH: dict[str, Handler] = {
     "INDIRV": h_indirv,
     "TLON": h_tlon,
     "HELICAL": h_helical,
+    # Rotation d'axes
+    "ROTABL": h_rotabl,
     # Compensation
     "CUTCOM": h_cutcom,
     # Meta-informations (commentees dans l'ISO)
