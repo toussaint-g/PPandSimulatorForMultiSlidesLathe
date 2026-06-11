@@ -154,13 +154,13 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     tool_type = ToolType(str(tool_tokens[-1]).strip().upper())
     state.tool_number = tool_number
     state.tool_type = tool_type
+    state.linked_spindle_number = iso_writer.machine.get_tool_linked_spindle(tool_number)
 
     # On verifie que le type d'outil dans l'APT correspond a celui declare dans la config machine pour eviter les incoherences.
     json_tool_type = iso_writer.machine.get_tool_type(state.tool_number)
     if json_tool_type != state.tool_type:
         raise ValueError(
-            f"MachineConfigError: type outil LOADTL {state.tool_type.value} different du JSON {json_tool_type.value} "
-            f"pour l'outil {state.tool_number}"
+            f"MachineConfigError: type outil LOADTL {state.tool_type.value} different du JSON {json_tool_type.value} pour l'outil {state.tool_number}"
         )
     # Avant le changement d'outil, on deplace la machine au point de changement d'outil pour eviter les collisions.
     state.position_x = iso_writer.machine.get_tool_change_point_x_for_t0()
@@ -180,6 +180,21 @@ def h_spindle_name(apt_keyword: str, argument_text: str, state: WriterState, iso
     state.spindle_vector_j = spindle_j
     state.spindle_vector_k = spindle_k
 
+    # Verification de la coherence entre la broche declaree et l'outil lie a cette broche.
+    if state.linked_spindle_number != state.spindle_number:
+        raise ValueError(
+            f"ATTENTION: broche {state.spindle_number} selectionnee dans CATIA alors que l'outil {state.tool_number} est lie a la broche {state.linked_spindle_number}"
+        )
+    
+
+
+
+
+
+
+
+
+
 
 def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Met a jour la vitesse de broche, l'unite et la direction, et emet les lignes ISO correspondantes si necessaire."""
@@ -197,13 +212,12 @@ def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
         state.tool_comment,
         state.tool_number,
         state.tool_type,
+        state.linked_spindle_number,
         state.spindle_number,
         state.rotation_speed,
         state.rotation_unit,
         state.rotation_direction,
         state.position_x,
-        state.position_y,
-        state.position_z,
         state.position_c,
         state.tool_change_processing,
             )
@@ -214,6 +228,22 @@ def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
         state.position_y = tool_update.position_y
 
     state.tool_change_processing = False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def h_rapid(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
@@ -241,7 +271,7 @@ def h_feedrat(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
 
 def h_goto(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Deplace la machine selon le mode specifie et les coordonnees fournies."""
-    # Exemple accepte : GOTO/100,200,300, 0, 0, 1
+    # Exemple accepte : GOTO/1.45000,0.10000,0.01921,0.000000,0.000000,-1.000000
     coordinates = csv_floats(argument_text)
     new_x_value = coordinates[0]
     new_y_value = coordinates[1]
@@ -364,17 +394,17 @@ def h_helical(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
 
 
 
-
+# TODO: a finaliser apres verification des mouvements en axe C.
 def h_rotabl(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Met a jour le mode de compensation d'outil et emet les lignes ISO correspondantes si necessaire."""
-    # Exemple accepte : ROTABL/LEFT
+    # Exemple accepte : ROTABL/180.000000,CLW,CAXIS
     rotabl_tokens = csv_tokens(argument_text)
     rotabl_amount = float(rotabl_tokens[0])
     rotabl_direction = RotationDirection(rotabl_tokens[1])
     rotabl_axis = AxisOfRotation(rotabl_tokens[2])
 
     # Si CAXIS, on traite sinon, message d'erreur.
-    if rotabl_axis != AxisOfRotation.CAXIS:
+    if rotabl_axis == AxisOfRotation.CAXIS and state.tool_type == ToolType.MILL:
         # On applique la rotation a l'axe C en fonction du sens de rotation et de l'angle de rotation.
         if rotabl_direction == RotationDirection.CLW:
             state.position_c += rotabl_amount

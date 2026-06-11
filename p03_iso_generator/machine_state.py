@@ -26,6 +26,7 @@ class WriterState:
     tool_comment: Optional[str] = None
     tool_number: Optional[int] = None
     tool_type: Optional[ToolType] = None
+    linked_spindle_number: Optional[int] = None
     # Coolant
     coolant_on: bool = False
     # Position
@@ -60,6 +61,7 @@ class EmissionState:
     # Tool
     last_tool_number: Optional[int] = None
     last_tool_type:  Optional[ToolType] = None
+    last_linked_spindle_number: Optional[int] = None
     # Spindle
     last_spindle_number: Optional[int] = None
     # Rotation

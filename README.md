@@ -62,6 +62,7 @@ Pour le parametrage des machines d'usinage. Un nombre d'options sont parametrabl
 - **xmirror / ymirror**: booleens definis par outil. Si **xmirror** vaut true, les coordonnees X sont inversees dans le rendu toolpath. Si **ymirror** vaut true, les coordonnees Y sont inversees.
 - **toolvector**: repere determinant les orientations des outils de fraisage dans la machine.
 - **workplane**: repere determinant les plans de travail de chaque outil. Valeurs negatives pas utiles car plan de travail uniquement. /!\ Attention: les plans de travail pour les deplacements circulaires sont donnees uniquement par ces workplanes! Non prise en compte des G17/G18/G19 donnees par les programmes.
+- **spindlelinked**: numero de broche machine associee a l'outil.
 - **tooltype**: 
     - **tool_type: "TURN"** -> outil de tournage.
 	- **tool_type: "MILL"** -> outil de fraisage.

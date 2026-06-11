@@ -81,6 +81,20 @@ def _get_required_numbered_config(configs: JsonDict, item_number: int, item_labe
     return item_config
 
 
+def _extract_required_int(value: object, field_name: str, item_label: str, item_number: int) -> int:
+    """Extrait un entier obligatoire depuis une configuration numerotee."""
+    if isinstance(value, bool):
+        raise ValueError(f"MachineConfigError: {field_name} invalide pour {item_label} {item_number}")
+
+    try:
+        int_value = int(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"MachineConfigError: {field_name} invalide pour {item_label} {item_number}")
+    if value != int_value and str(value) != str(int_value):
+        raise ValueError(f"MachineConfigError: {field_name} invalide pour {item_label} {item_number}")
+    return int_value
+
+
 @dataclass
 class MachineParameters:
     """Regroupe les donnees utiles extraites du JSON machine pour un canal."""
@@ -167,6 +181,13 @@ class MachineParameters:
         tool_config = self.get_required_tool_config(tool_number)
         return ToolType(str(tool_config.get("tooltype")).strip().upper())
 
+    def get_tool_linked_spindle(self, tool_number: int) -> int:
+        """Retourne la broche machine associee a l'outil dans le JSON."""
+        tool_config = self.get_required_tool_config(tool_number)
+        spindle_number = _extract_required_int(tool_config.get("spindlelinked"), "spindlelinked", "l'outil", tool_number)
+        self.get_required_spindle_config(spindle_number)
+        return spindle_number
+
     def get_tool_change_point_for_c_axis(self, position_c: float) -> tuple[float, float, float]:
         """Retourne le point de changement outil transforme dans le repere machine selon C."""
         tool_change_x = self.channel_tool_change_point_x_for_t0
@@ -202,6 +223,19 @@ class MachineParameters:
                 f"MachineConfigError: code de rotation absent pour l'outil {tool_number}."
             )
         return normalize_gm_code(str(rotation_code))
+
+    def get_spindle_code(
+        self,
+        tool_number: int,
+        spindle_number: int | None,
+        rotation_direction: RotationDirection | None = None,
+    ) -> str:
+        """Retourne le code de broche selon le type d'outil actif."""
+        if self.get_tool_type(tool_number) == ToolType.TURN:
+            if spindle_number is None:
+                raise ValueError("MachineConfigError: SPINDL_NAME absent pour un outil TURN")
+            return self.get_code_for_turn_spindle(spindle_number, rotation_direction)
+        return self.get_code_for_tool_rotation(tool_number, rotation_direction)
 
     def get_work_plane_code_from_vector(self, workplane_vector: object) -> str:
         """Retourne le code G17/G18/G19 correspondant au vecteur de plan declare dans le JSON."""

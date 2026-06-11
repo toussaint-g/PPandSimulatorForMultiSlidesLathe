@@ -52,7 +52,7 @@ class IsoWriter:
 
     def footer(self, tool_number: int, spindle_number: Optional[int] = None) -> None:
         """Ajoute le pied de page minimal pour un programme de fraisage."""
-        self.emit(self.get_spindle_code(tool_number, spindle_number))
+        self.emit(self.machine.get_spindle_code(tool_number, spindle_number))
         self.emit(f"{self.machine.endprogram_code}")
         self.emit(f"{self.machine.startandendfile_character}")
 
@@ -67,88 +67,155 @@ class IsoWriter:
         self.emit(f"(CANAL {channel_number})")
 
 
-    def apply_tool_update(self, tool_comment: str, tool_number: int, tool_type: ToolType,
-                          spindle_number: int, rotation_speed: float, rotation_unit: RotationUnit, rotation_direction: RotationDirection,
-                          position_x: float, position_y: float, position_z: float, position_c: float,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # TODO: reprendre cette partie car generation de C0 lors des changements de C.
+
+    # TODO: rotation_unit non utilisee. A implementer??
+    def apply_tool_update(self, tool_comment: str, tool_number: int, tool_type: ToolType, linked_spindle_number: Optional[int],
+                          spindle_number: int,
+                          rotation_speed: float, rotation_unit: RotationUnit, rotation_direction: RotationDirection,
+                          position_x: float, position_c: float,
                           tool_change_processing: bool) -> ToolUpdateResult:
         """Emet les lignes ISO necessaires pour appliquer un changement d'outil et les changements de position logiques associes."""
+        
+
+
+        
+
+
+
+
+
         result = ToolUpdateResult()
-        # Si traitement du changement d'outil, on emet les lignes de changement d'outil et on met a jour l'emission state en consequence.
+
+
+
+
+
+
+
+
+
+
+        # Si changement d'outil (donc LOADTL dans APT), on emet les lignes de changement d'outil et on met a jour l'emission state en consequence.
         if tool_change_processing:
-            # Degagement de l'outil avant changement
+            # Degagement de l'outil avant changement.
             axis_words = [self.machine.rapid_move_code, f"{self.machine.toolname_prefix}0"]
             x_to_emit = position_x * 2 if self.machine.x_diameter else position_x
             axis_words.append(f"X{format_float_to_iso(x_to_emit)}")
             self.emit(f"{' '.join(axis_words)} (DEGAGEMENT OUTIL)")
             self.emission_state.last_x_position = position_x
-            # Si un outil precedent not none, on arrete l'outil ou la broche.
-            if (self.emission_state.last_tool_number is not None and self.emission_state.last_spindle_number != spindle_number) or (
-                self.emission_state.last_tool_number is not None and self.emission_state.last_tool_number != tool_number
+
+            # Si outil precedent not None, changement d'outil et nouvel outil de type MILL, on l'arrete.
+            if (self.emission_state.last_tool_number is not None and 
+                self.emission_state.last_tool_number != tool_number and 
+                tool_type == ToolType.MILL
                 ):
                 self.spindle_stop(self.emission_state.last_tool_number, self.emission_state.last_spindle_number)
-            # Commentaire et changement d'outil
+
+            # Commentaire et changement d'outil.
             self.emit(f"({self.machine.toolname_prefix}{tool_number:02d}{tool_number:02d} - {tool_comment})")
             self.emit(f"{self.machine.toolname_prefix}{tool_number:02d}{tool_number:02d}")
 
-        # Si 1er outil de type TURN ou changement d'outil de type MILL vers TURN
-        if (self.emission_state.last_tool_type == None and tool_type == ToolType.TURN) or (
-            self.emission_state.last_tool_type == ToolType.MILL and tool_type == ToolType.TURN
-            ):
-            self.emit(self.machine.get_code_for_spindle_c_axis(spindle_number, False))
-            rotation_code = self.machine.get_code_for_turn_spindle(spindle_number, rotation_direction)
-            self.emit(f"{rotation_code} {self.machine.spindle_speed_prefix}{format_float_to_iso(rotation_speed)}")
-            self.emission_state.last_y_position = 0.0
-            result.position_y = 0.0
-            
-        # Si 1er outil de type MILL ou changement d'outil de type TURN vers MILL
-        elif (self.emission_state.last_tool_type == None and tool_type == ToolType.MILL) or (
-            self.emission_state.last_tool_type == ToolType.TURN and tool_type == ToolType.MILL
-            ):
-            rotation_code = self.machine.get_code_for_tool_rotation(tool_number, rotation_direction)
-            self.emit(f"{rotation_code} {self.machine.spindle_speed_prefix}{format_float_to_iso(rotation_speed)}")
-            self.emit(self.machine.get_code_for_spindle_c_axis(spindle_number, True))
-            self.emit(self.machine.get_code_for_spindle_brake(spindle_number, False))
-            self.emit(f"{self.machine.rapid_move_code} C{format_float_to_iso(0.0)}")
-            self.emission_state.last_c_position = 0.0
-            result.position_c = 0.0
-            self.emit(self.machine.get_code_for_spindle_brake(spindle_number, True))
-
-        # Si changement d'outil TURN vers TURN
-        elif self.emission_state.last_tool_type == ToolType.TURN and tool_type == ToolType.TURN:
-            if self.emission_state.last_spindle_number != spindle_number:
+            # Si 1er outil et de type TURN ou changement d'outil de type MILL vers TURN.
+            if (self.emission_state.last_tool_type == None and tool_type == ToolType.TURN) or (
+                self.emission_state.last_tool_type == ToolType.MILL and tool_type == ToolType.TURN
+                ):
                 self.emit(self.machine.get_code_for_spindle_c_axis(spindle_number, False))
                 rotation_code = self.machine.get_code_for_turn_spindle(spindle_number, rotation_direction)
                 self.emit(f"{rotation_code} {self.machine.spindle_speed_prefix}{format_float_to_iso(rotation_speed)}")
-            elif self.emission_state.last_rotation_speed != rotation_speed or self.emission_state.last_rotation_direction != rotation_direction:
-                rotation_code = self.machine.get_code_for_turn_spindle(spindle_number, rotation_direction)
-                self.emit(f"{rotation_code} {self.machine.spindle_speed_prefix}{format_float_to_iso(rotation_speed)}")
-
-        # Si changement d'outil MILL vers MILL
-        elif self.emission_state.last_tool_type == ToolType.MILL and tool_type == ToolType.MILL:
-            # Si le numero de broche a change, on emet le code de changement de broche et on remet la position C a 0.
-            if self.emission_state.last_tool_number != tool_number:
+                self.emission_state.last_y_position = 0.0
+                result.position_y = 0.0
+                
+            # Si 1er outil et de type MILL ou changement d'outil de type TURN vers MILL.
+            elif (self.emission_state.last_tool_type == None and tool_type == ToolType.MILL) or (
+                self.emission_state.last_tool_type == ToolType.TURN and tool_type == ToolType.MILL
+                ):
                 rotation_code = self.machine.get_code_for_tool_rotation(tool_number, rotation_direction)
                 self.emit(f"{rotation_code} {self.machine.spindle_speed_prefix}{format_float_to_iso(rotation_speed)}")
-            # Si le numero de broche a change ou que la position C courante n'est pas 0, on emet le code de changement de 
-            # broche et on remet la position C a 0.
-            if self.emission_state.last_spindle_number != spindle_number:
                 self.emit(self.machine.get_code_for_spindle_c_axis(spindle_number, True))
                 self.emit(self.machine.get_code_for_spindle_brake(spindle_number, False))
                 self.emit(f"{self.machine.rapid_move_code} C{format_float_to_iso(0.0)}")
                 self.emission_state.last_c_position = 0.0
                 result.position_c = 0.0
                 self.emit(self.machine.get_code_for_spindle_brake(spindle_number, True))
-            # Si la position C courante n'est pas 0, on remet la position C a 0.
-            if position_c != 0.0:
-                self.emit(self.machine.get_code_for_spindle_brake(spindle_number, False))
-                self.emit(f"{self.machine.rapid_move_code} C{format_float_to_iso(0.0)}")
-                self.emission_state.last_c_position = 0.0
-                result.position_c = 0.0
-                self.emit(self.machine.get_code_for_spindle_brake(spindle_number, True))
+
+            # Si changement d'outil TURN vers TURN.
+            elif self.emission_state.last_tool_type == ToolType.TURN and tool_type == ToolType.TURN:
+                if self.emission_state.last_spindle_number != spindle_number:
+                    self.emit(self.machine.get_code_for_spindle_c_axis(spindle_number, False))
+                    rotation_code = self.machine.get_code_for_turn_spindle(spindle_number, rotation_direction)
+                    self.emit(f"{rotation_code} {self.machine.spindle_speed_prefix}{format_float_to_iso(rotation_speed)}")
+                elif self.emission_state.last_rotation_speed != rotation_speed or self.emission_state.last_rotation_direction != rotation_direction:
+                    rotation_code = self.machine.get_code_for_turn_spindle(spindle_number, rotation_direction)
+                    self.emit(f"{rotation_code} {self.machine.spindle_speed_prefix}{format_float_to_iso(rotation_speed)}")
+
+            # Si changement d'outil MILL vers MILL.
+            elif self.emission_state.last_tool_type == ToolType.MILL and tool_type == ToolType.MILL:
+                # Si nouvel outil, on le met en rotation avec les bons codes.
+                if self.emission_state.last_tool_number != tool_number:
+                    rotation_code = self.machine.get_code_for_tool_rotation(tool_number, rotation_direction)
+                    self.emit(f"{rotation_code} {self.machine.spindle_speed_prefix}{format_float_to_iso(rotation_speed)}")
+            
+
+
+
+
+
+
+
+
+
+        else:
+            # Si pas de changement d'outil mais changement de broche, message d'erreur car changement d'outil requis.
+            if self.emission_state.last_spindle_number != spindle_number:
+                raise ValueError(f"CatiaConfigError: changement de broche impossible sans changement d'outil prealable : {spindle_number}")
+            
+
+
+
+
+
+
+
+
+
+
+
+        # Si changement de vitesse de rotation, d'unite ou de direction, on emet le bon code de rotation et on change la vitesse.
+        if (self.emission_state.last_rotation_speed is not None and
+            (rotation_speed != self.emission_state.last_rotation_speed or 
+            rotation_unit != self.emission_state.last_rotation_unit or 
+            rotation_direction != self.emission_state.last_rotation_direction)
+            ):
+            if tool_type == ToolType.TURN:
+                rotation_code = self.machine.get_code_for_turn_spindle(spindle_number, rotation_direction)
+            elif tool_type == ToolType.MILL:
+                rotation_code = self.machine.get_code_for_tool_rotation(tool_number, rotation_direction)
+            self.emit(f"{rotation_code} {self.machine.spindle_speed_prefix}{format_float_to_iso(rotation_speed)}")
+
+
+
+
+
 
         # Mise a jour de l'emission state apres emission du changement d'outil.
         self.emission_state.last_tool_number = tool_number
         self.emission_state.last_tool_type = tool_type
+        self.emission_state.last_linked_spindle_number = linked_spindle_number
         self.emission_state.last_spindle_number = spindle_number
         self.emission_state.last_rotation_speed = rotation_speed
         self.emission_state.last_rotation_unit = rotation_unit
@@ -156,29 +223,48 @@ class IsoWriter:
         return result
 
 
-    def get_spindle_code(
-        self,
-        tool_number: int,
-        spindle_number: Optional[int],
-        rotation_direction: RotationDirection | None = None,
-    ) -> str:
-        """Retourne le code de broche selon le type d'outil actif."""
-        if self.machine.get_tool_type(tool_number) == ToolType.TURN:
-            if spindle_number is None:
-                raise ValueError("MachineConfigError: SPINDL_NAME absent pour un outil TURN")
-            return self.machine.get_code_for_turn_spindle(spindle_number, rotation_direction)
-        return self.machine.get_code_for_tool_rotation(tool_number, rotation_direction)
+
+
+
+
+
+
+
+
+
 
 
     def spindle_stop(self, tool_number: int, spindle_number: Optional[int] = None) -> None:
         """Arrete la broche."""
-        self.emit(self.get_spindle_code(tool_number, spindle_number))
+        self.emit(self.machine.get_spindle_code(tool_number, spindle_number))
 
 
+
+
+
+
+
+
+
+    # TODO: a verifier.
     def linear_move(self, tool_number: int, motion_mode: MotionMode, cutcom_mode: ToolComp, feedrate_value: float,
                     feedrate_unit: Optional[FeedrateUnit], position_x=None, position_y=None, position_z=None,
                     position_c=None) -> None:
         """Gere les mouvements lineaires en emettant le code de mouvement approprie et les coordonnees qui ont change."""
+
+        # Si une position en axe C est fournie, on emet le code de mouvement en axe C avant les autres axes pour eviter les collisions.
+        if position_c is not None:
+            # Si une rotation en axe C est demandee, on emet le code de desactivation et reactivation du frein de broche.
+            spindle_number = self.emission_state.last_spindle_number
+            self.emit(self.machine.get_code_for_spindle_brake(spindle_number, False))
+            self.emit(f"{self.machine.rapid_move_code} C{format_float_to_iso(position_c)}")
+            self.emit(self.machine.get_code_for_spindle_brake(spindle_number, True))
+            self.emission_state.last_c_position = position_c
+
+
+
+
+        # Determination du code de mouvement lineaire ou rapide et construction de la ligne de mouvement avec les axes qui ont change.
         motion_code = self.machine.rapid_move_code if motion_mode == MotionMode.RAPID else self.machine.linear_move_code
         axis_words = [motion_code]
 
@@ -198,10 +284,7 @@ class IsoWriter:
         if position_z is not None:
             axis_words.append(f"Z{format_float_to_iso(position_z)}")
             self.emission_state.last_z_position = position_z
-        if position_c is not None:
-            axis_words.append(f"C{format_float_to_iso(position_c)}")
-            self.emission_state.last_c_position = position_c
-
+        
         # Si l'unite d'avance a change, on l'ajoute a la ligne de mouvement.
         if self.emission_state.last_feedrate_unit != feedrate_unit:
             if feedrate_unit == FeedrateUnit.MMPM:
@@ -218,6 +301,7 @@ class IsoWriter:
 
         # Si au moins une information a changee, on emet la ligne de mouvement.
         self.emit(" ".join(axis_words))
+
 
 
     def circular_move(self, work_plane: str, motion_code: str, feedrate_value: float, feedrate_unit: Optional[FeedrateUnit],
@@ -272,3 +356,16 @@ class IsoWriter:
             self.emission_state.last_feedrate_value = feedrate_value
 
         self.emit(" ".join(axis_words))
+
+
+
+
+
+
+
+
+    # TODO: a finaliser apres verification des mouvements en axe C.
+    def caxis_move(self, tool_number: int, spindle_number: Optional[int], rotation_speed: float, rotation_unit: RotationUnit,
+                   rotation_direction: RotationDirection, position_c: float) -> None:
+        """Gere les mouvements en axe C en emettant le code de rotation de broche approprie et la position C."""
+        

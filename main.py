@@ -18,6 +18,7 @@ from p04_iso_analyzer.iso_interpreter import IsoInterpreter
 from p04_iso_analyzer.iso_analyzer_writer import IsoAnalyzerWriter
 from p01_machines_config.machine_parameters import JsonDict
 from p01_machines_config.machines_config_loader import MachinesConfigLoader
+from p01_machines_config.machine_html_writer import write_machine_html
 from p05_toolpath_constructor.toolpath_viewer import ToolPathViewer
 from p02_toolpath_config.toolpath_config_loader import ToolPathConfigLoader
 from p03_iso_generator.apt2iso import convert_file
@@ -228,6 +229,18 @@ def open_machine_image_for(machine_name):
     if not image_path.exists():
         raise ValueError(f"MachineConfigError: l'image specifiee est introuvable : {image_path}")
     os.startfile(image_path)
+
+
+def generate_machine_html_for(machine_name, output_folder):
+    """Genere et ouvre une fiche HTML pour la machine selectionnee."""
+    MachinesConfigLoader.load_config()
+    machine_config: JsonDict = MachinesConfigLoader.get_machine(machine_name)
+    if not machine_config:
+        raise ValueError(f"MachineConfigError: machine introuvable : {machine_name}")
+
+    html_path = write_machine_html(output_folder, machine_name, machine_config)
+    os.startfile(html_path)
+    messagebox.showinfo("HTML machine genere", f"Fiche machine generee :\n{html_path}")
 
 
 def nombre_decimal_negatif_valide(nouveau_texte):
@@ -469,9 +482,19 @@ def main():
                                  ))
     visualize_button_for_analyzer.grid(column=2, row=14, sticky="w", padx=5, pady=5)
 
+    generate_machine_html_button = tb.Button(main_frame, text="Generer HTML", bootstyle="primary",
+                                 command=lambda: run_ui_action(
+                                     "Erreur generation HTML machine",
+                                     lambda: generate_machine_html_for(
+                                         selected_machine_for_analyzer.get(),
+                                         Path(label_output_folder_for_analyzer.cget("text")) / get_datetime_string(),
+                                     ),
+                                 ))
+    generate_machine_html_button.grid(column=2, row=15, sticky="w", padx=5, pady=5)
+
     # Section decalage piece
     tb.Label(main_frame, text="Epaisseur piece (pour dec COP) :", 
-             font=("Segoe UI", 16)).grid(column=2, row=15, sticky="w", padx=5, pady=5)
+             font=("Segoe UI", 16)).grid(column=2, row=16, sticky="w", padx=5, pady=5)
     
     # Validation de l'entree pour n'autoriser que les nombres decimaux negatifs et les etats intermediaires
     vcmd = (form.register(nombre_decimal_negatif_valide), "%P")
@@ -484,10 +507,10 @@ def main():
         validate="key",
         validatecommand=vcmd
     )
-    part_thickness.grid(column=2, row=16, sticky="w", padx=5, pady=5)
+    part_thickness.grid(column=2, row=17, sticky="w", padx=5, pady=5)
 
     # Section Visualiser les trajectoires
-    tb.Label(main_frame, text="Visualiser les trajectoires :", font=("Segoe UI", 16)).grid(column=2, row=18, sticky="w", padx=5, pady=5)
+    tb.Label(main_frame, text="Visualiser les trajectoires :", font=("Segoe UI", 16)).grid(column=2, row=19, sticky="w", padx=5, pady=5)
     visualize_button_for_analyzer = tb.Button(main_frame, text="Start", bootstyle="success", command=lambda: run_ui_action(
         "Erreur simulation",
         lambda: viewer_launch(
@@ -498,7 +521,7 @@ def main():
             part_thickness_var.get(),
         ),
     ))
-    visualize_button_for_analyzer.grid(column=2, row=19, sticky="w", padx=5, pady=5)
+    visualize_button_for_analyzer.grid(column=2, row=20, sticky="w", padx=5, pady=5)
     visualize_button_for_analyzer.config(state="disabled")  # Desactiver au debut
 
     update_calculate_button(

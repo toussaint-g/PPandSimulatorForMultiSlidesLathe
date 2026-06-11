@@ -67,16 +67,19 @@
           "listoftools": {
             "1": {
               "tooltype": "TURN",
+              "spindlelinked": 1,
               "xmirrorfortoolpath": false,
               "workplane": [0, 1, 0]
             },
             "2": {
               "tooltype": "TURN",
+              "spindlelinked": 1,
               "xmirrorfortoolpath": false,
               "workplane": [0, 1, 0]
             },
             "3": {
               "tooltype": "MILL",
+              "spindlelinked": 1,
               "xmirrorfortoolpath": false,
               "ktoolvector": [1, 0, 0],
               "workplane": [1, 0, 0],
@@ -89,6 +92,7 @@
             },
             "5": {
               "tooltype": "MILL",
+              "spindlelinked": 1,
               "xmirrorfortoolpath": false,
               "ktoolvector": [0, 0, -1],
               "workplane": [0, 0, 1],
@@ -106,16 +110,19 @@
           "listoftools": {
             "31": {
               "tooltype": "TURN",
+              "spindlelinked": 2,
               "xmirrorfortoolpath": false,
               "workplane": [0, 1, 0]
             },
             "32": {
               "tooltype": "TURN",
+              "spindlelinked": 2,
               "xmirrorfortoolpath": false,
               "workplane": [0, 1, 0]
             },
             "33": {
               "tooltype": "MILL",
+              "spindlelinked": 2,
               "xmirrorfortoolpath": false,
               "ktoolvector": [-1, 0, 0],
               "workplane": [1, 0, 0],
@@ -128,6 +135,7 @@
             },
             "35": {
               "tooltype": "MILL",
+              "spindlelinked": 2,
               "xmirrorfortoolpath": false,
               "ktoolvector": [0, 0, 1],
               "workplane": [0, 0, 1],
@@ -145,16 +153,19 @@
           "listoftools": {
             "11": {
               "tooltype": "TURN",
+              "spindlelinked": 3,
               "xmirrorfortoolpath": true,
               "workplane": [0, 1, 0]
             },
             "12": {
               "tooltype": "TURN",
+              "spindlelinked": 3,
               "xmirrorfortoolpath": true,
               "workplane": [0, 1, 0]
             },
             "13": {
               "tooltype": "MILL",
+              "spindlelinked": 3,
               "xmirrorfortoolpath": true,
               "ktoolvector": [-1, 0, 0],
               "workplane": [1, 0, 0],
@@ -167,6 +178,7 @@
             },
             "15": {
               "tooltype": "MILL",
+              "spindlelinked": 3,
               "xmirrorfortoolpath": true,
               "ktoolvector": [0, 0, -1],
               "workplane": [0, 0, 1],
