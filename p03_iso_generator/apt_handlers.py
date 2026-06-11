@@ -10,7 +10,7 @@ from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, Rotation
 from p03_iso_generator.apt_parser import csv_floats, csv_tokens
 from p03_iso_generator.helical import emit_helical_move, emit_helical_not_supported, parse_helical_definition, solve_helical_definition
 from p03_iso_generator.iso_writer import IsoWriter
-from p03_iso_generator.machine_state import WriterState
+from p03_iso_generator.machine_state import SpindleSelection, ToolSelection, WriterState
 from p03_iso_generator.tlon import emit_tlon_arc, emit_tlon_not_supported, parse_tlon_definition, solve_tlon_definition
 
 
@@ -207,16 +207,10 @@ def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
     state.rotation_unit = rotation_unit
     state.rotation_direction = rotation_direction
 
-    # Si traitement du changement d'outil.
+    # SPINDL finalise l'etat outil/broche et declenche l'emission ISO.
     tool_update = iso_writer.apply_tool_update(
-        state.tool_comment,
-        state.tool_number,
-        state.tool_type,
-        state.linked_spindle_number,
-        state.spindle_number,
-        state.rotation_speed,
-        state.rotation_unit,
-        state.rotation_direction,
+        ToolSelection.from_writer_state(state),
+        SpindleSelection.from_writer_state(state),
         state.position_x,
         state.position_c,
         state.tool_change_processing,

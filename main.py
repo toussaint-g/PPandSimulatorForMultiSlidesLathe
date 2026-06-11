@@ -99,6 +99,12 @@ def apt_treatment(path_apt_file, path_export_file, machine_name, channel_name):
 
     convert_file(str(in_path), str(debug_path), machine_config, channel_name, str(nc_path))
 
+
+    # TODO: a enlever???
+    os.startfile(debug_path)
+
+
+
     messagebox.showinfo("Conversion terminee", f"ISO genere :\n{nc_path}\n\nDebug genere :\n{debug_path}")
 
 
