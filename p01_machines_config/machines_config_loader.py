@@ -3,6 +3,8 @@
 import json
 from typing import TypeAlias
 
+from app_errors import ErrorCategory, error_message
+
 
 JsonDict: TypeAlias = dict[str, object]
 
@@ -23,7 +25,10 @@ class MachinesConfigLoader:
 
         except FileNotFoundError:
             raise FileNotFoundError(
-                'Erreur : Le fichier des configurations machines (.json) est introuvable.'
+                error_message(
+                    ErrorCategory.MACHINE_CONFIG,
+                    "le fichier des configurations machines (.json) est introuvable",
+                )
             )
 
     @staticmethod

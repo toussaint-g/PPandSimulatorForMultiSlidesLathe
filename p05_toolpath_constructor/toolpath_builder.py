@@ -4,6 +4,8 @@
 import vtk
 import numpy as np
 
+from app_errors import ErrorCategory, error_message
+
 
 class ToolPathBuilder:
     """Cette classe permet construire les trajectoires"""
@@ -23,7 +25,10 @@ class ToolPathBuilder:
         n = np.array(normal_values, dtype=float)
         norm_n = np.linalg.norm(n)
         if norm_n == 0:
-            raise ValueError("Le vecteur normal du plan ne peut pas etre nul.")
+            raise ValueError(error_message(
+                ErrorCategory.GEOMETRY,
+                "le vecteur normal du plan ne peut pas etre nul",
+            ))
         n = n / norm_n
 
         # Choisir un axe de reference non colineaire a n.
@@ -79,9 +84,15 @@ class ToolPathBuilder:
         corde = e2 - s2
         lg_corde = np.linalg.norm(corde)
         if lg_corde == 0:
-            raise ValueError("Les points de depart et d'arrivee sont identiques.")
+            raise ValueError(error_message(
+                ErrorCategory.GEOMETRY,
+                "les points de depart et d'arrivee sont identiques",
+            ))
         if lg_corde > 2 * radius:
-            raise ValueError("Le rayon est trop petit pour connecter les deux points.")
+            raise ValueError(error_message(
+                ErrorCategory.GEOMETRY,
+                "le rayon est trop petit pour connecter les deux points",
+            ))
 
         midpoint = (s2 + e2) / 2
         h = np.sqrt(radius**2 - (lg_corde / 2) ** 2)

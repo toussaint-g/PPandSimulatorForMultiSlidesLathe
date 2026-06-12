@@ -5,6 +5,7 @@ import math
 import vtk
 
 # Modules internes
+from app_errors import ErrorCategory, error_message
 from p04_iso_analyzer.iso_interpreter import MoveType
 from p01_machines_config.machine_parameters import JsonDict, MachineParameters
 from p05_toolpath_constructor.toolpath_builder import ToolPathBuilder
@@ -24,7 +25,10 @@ class ToolPathInterpreter:
 
         xmirrorfortoolpath = tool_config.get("xmirrorfortoolpath", False)
         if not isinstance(xmirrorfortoolpath, bool):
-            raise ValueError(f"MachineConfigError: xmirrorfortoolpath invalide pour l'outil {tool_number}")
+            raise ValueError(error_message(
+                ErrorCategory.MACHINE_CONFIG,
+                f"xmirrorfortoolpath invalide pour l'outil {tool_number}",
+            ))
 
         if xmirrorfortoolpath:
             return [1, 0, 0]
@@ -358,7 +362,7 @@ class VtkFunctions:
         axis = [abs(value) for value in plane_vector]
 
         if axis != [1, 0, 0]:
-            raise ValueError("SymmetryError: vecteur de plan non supporte")
+            raise ValueError(error_message(ErrorCategory.SYMMETRY, "vecteur de plan non supporte"))
 
         transform = vtk.vtkTransform()
         transform.Scale(-1, 1, 1)
@@ -379,7 +383,10 @@ class VtkFunctions:
 
         num_points = output_polydata.GetNumberOfPoints()
         if len(c_values) != num_points:
-            raise ValueError("CDataError: nombre d'angles C different du nombre de points")
+            raise ValueError(error_message(
+                ErrorCategory.TOOLPATH_DATA,
+                "nombre d'angles C different du nombre de points",
+            ))
 
         c_array = vtk.vtkDoubleArray()
         c_array.SetName(array_name)
@@ -429,7 +436,10 @@ class VtkFunctions:
 
         num_cells = output_polydata.GetNumberOfCells()
         if len(move_type_values) != num_cells:
-            raise ValueError("MoveTypeDataError: nombre de types de mouvements different du nombre de cellules")
+            raise ValueError(error_message(
+                ErrorCategory.TOOLPATH_DATA,
+                "nombre de types de mouvements different du nombre de cellules",
+            ))
 
         move_type_array = vtk.vtkUnsignedCharArray()
         move_type_array.SetName(array_name)

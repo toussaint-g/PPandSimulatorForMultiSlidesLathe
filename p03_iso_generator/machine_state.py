@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, replace
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional
+from app_errors import ErrorCategory, error_message
 from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, RotationDirection, RotationUnit, ToolType, ToolComp
 
 if TYPE_CHECKING:
@@ -166,8 +167,10 @@ class ToolTransition:
         # La logique actuelle impose un LOADTL avant un changement de broche.
         if not self.tool_change_processing and self.is_spindle_change:
             raise ValueError(
-                "CatiaConfigError: changement de broche impossible sans changement d'outil prealable : "
-                f"{self.current_spindle.number}"
+                error_message(
+                    ErrorCategory.CATIA_CONFIG,
+                    f"changement de broche impossible sans changement d'outil prealable : {self.current_spindle.number}",
+                )
             )
 
     def kind(self) -> TransitionKind:
@@ -192,9 +195,10 @@ class ToolTransition:
             return TransitionKind.TURN_TO_TURN
         if previous_type == ToolType.MILL and current_type == ToolType.MILL:
             return TransitionKind.MILL_TO_MILL
-        raise ValueError(
-            f"ToolTransitionError: transition non supportee {previous_type} -> {current_type}"
-        )
+        raise ValueError(error_message(
+            ErrorCategory.TOOL_TRANSITION,
+            f"transition non supportee {previous_type} -> {current_type}",
+        ))
 
 
 class MachiningProfile(ABC):
@@ -215,35 +219,41 @@ class MachiningProfile(ABC):
         spindle = selection.spindle
 
         if tool.number is None:
-            raise ValueError(f"{self.profile_name}ProfileError: LOADTL absent avant mouvement")
+            raise ValueError(error_message(f"{self.profile_name}ProfileError", "LOADTL absent avant mouvement"))
         if tool.tool_type is None:
-            raise ValueError(f"{self.profile_name}ProfileError: type outil absent avant mouvement")
+            raise ValueError(error_message(f"{self.profile_name}ProfileError", "type outil absent avant mouvement"))
         if tool.tool_type != self.tool_type:
             raise ValueError(
-                f"{self.profile_name}ProfileError: outil {tool.number} declare {tool.tool_type.value}, "
-                f"profil attendu {self.tool_type.value}"
+                error_message(
+                    f"{self.profile_name}ProfileError",
+                    f"outil {tool.number} declare {tool.tool_type.value}, profil attendu {self.tool_type.value}",
+                )
             )
 
         json_tool_type = machine.get_tool_type(tool.number)
         if json_tool_type != tool.tool_type:
             raise ValueError(
-                f"{self.profile_name}ProfileError: type outil LOADTL {tool.tool_type.value} "
-                f"different du JSON {json_tool_type.value} pour l'outil {tool.number}"
+                error_message(
+                    f"{self.profile_name}ProfileError",
+                    f"type outil LOADTL {tool.tool_type.value} different du JSON {json_tool_type.value} pour l'outil {tool.number}",
+                )
             )
 
         if spindle.number is None:
-            raise ValueError(f"{self.profile_name}ProfileError: SPINDL_NAME absent avant mouvement")
+            raise ValueError(error_message(f"{self.profile_name}ProfileError", "SPINDL_NAME absent avant mouvement"))
         if tool.linked_spindle_number != spindle.number:
             raise ValueError(
-                f"{self.profile_name}ProfileError: broche {spindle.number} selectionnee alors que "
-                f"l'outil {tool.number} est lie a la broche {tool.linked_spindle_number}"
+                error_message(
+                    f"{self.profile_name}ProfileError",
+                    f"broche {spindle.number} selectionnee alors que l'outil {tool.number} est lie a la broche {tool.linked_spindle_number}",
+                )
             )
         if spindle.rotation_speed is None:
-            raise ValueError(f"{self.profile_name}ProfileError: vitesse SPINDL absente avant mouvement")
+            raise ValueError(error_message(f"{self.profile_name}ProfileError", "vitesse SPINDL absente avant mouvement"))
         if spindle.rotation_unit is None:
-            raise ValueError(f"{self.profile_name}ProfileError: unite SPINDL absente avant mouvement")
+            raise ValueError(error_message(f"{self.profile_name}ProfileError", "unite SPINDL absente avant mouvement"))
         if spindle.rotation_direction is None:
-            raise ValueError(f"{self.profile_name}ProfileError: direction SPINDL absente avant mouvement")
+            raise ValueError(error_message(f"{self.profile_name}ProfileError", "direction SPINDL absente avant mouvement"))
 
     @abstractmethod
     def _validate_specific(self, selection: MachiningSelection, machine: MachineParameters) -> None:
@@ -259,13 +269,16 @@ class MillProfile(MachiningProfile):
         spindle = selection.spindle
 
         if spindle.vector_i is None or spindle.vector_j is None or spindle.vector_k is None:
-            raise ValueError("MILLProfileError: vecteur SPINDL_NAME absent avant mouvement de fraisage")
+            raise ValueError(error_message("MILLProfileError", "vecteur SPINDL_NAME absent avant mouvement de fraisage"))
 
         tool_config = machine.get_required_tool_config(selection.tool.number)
         tool_vector = tool_config.get("ktoolvector")
         if not isinstance(tool_vector, (list, tuple)) or len(tool_vector) != 3:
             raise ValueError(
-                f"MILLProfileError: ktoolvector absent ou invalide pour l'outil {selection.tool.number}"
+                error_message(
+                    "MILLProfileError",
+                    f"ktoolvector absent ou invalide pour l'outil {selection.tool.number}",
+                )
             )
 
 
@@ -284,7 +297,7 @@ def get_machining_profile(tool_type: ToolType) -> MachiningProfile:
         return MillProfile()
     if tool_type == ToolType.TURN:
         return TurnProfile()
-    raise ValueError(f"MachiningProfileError: type outil non supporte {tool_type}")
+    raise ValueError(error_message(ErrorCategory.MACHINING_PROFILE, f"type outil non supporte {tool_type}"))
 
 
 @dataclass

@@ -3,6 +3,7 @@
 import math
 import re
 from enum import Enum
+from app_errors import ErrorCategory, error_message
 from p01_machines_config.machine_parameters import JsonDict, MachineParameters, normalize_gm_code
 
 
@@ -292,7 +293,10 @@ class MathematicalFunctions:
         diameter = 2 * radius
         tolerance = abs(self.calculation_tolerance)
         if d > diameter + tolerance:
-            raise ValueError("Le rayon est trop petit pour passer par les deux points !!")
+            raise ValueError(error_message(
+                ErrorCategory.GEOMETRY,
+                "le rayon est trop petit pour passer par les deux points",
+            ))
 
         # Distance entre le milieu et le centre du cercle
         h_squared = radius**2 - (d / 2) ** 2
@@ -338,7 +342,10 @@ class MathematicalFunctions:
     def mouvement_time(self, distance, feedrate):
         """Cette methode retourne la duree pour parcourir une certaine distance"""
         if feedrate == 0:
-            raise ValueError("FeedrateError: avance nulle, impossible de calculer le temps de mouvement")
+            raise ValueError(error_message(
+                ErrorCategory.FEEDRATE,
+                "avance nulle, impossible de calculer le temps de mouvement",
+            ))
         return distance / feedrate
 
 

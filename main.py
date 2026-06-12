@@ -14,6 +14,7 @@ import os
 import re
 
 # Modules internes
+from app_errors import ErrorCategory, error_message
 from p04_iso_analyzer.iso_interpreter import IsoInterpreter
 from p04_iso_analyzer.iso_analyzer_writer import IsoAnalyzerWriter
 from p01_machines_config.machine_parameters import JsonDict
@@ -89,7 +90,7 @@ def apt_treatment(path_apt_file, path_export_file, machine_name, channel_name):
     #display_results(path_export_file)
 
     if not path_apt_file:
-        raise ValueError("Selectionne un fichier APT source.")
+        raise ValueError(error_message(ErrorCategory.APT_INPUT, "selectionne un fichier APT source"))
 
     path_export_file.mkdir(parents=True, exist_ok=True)
 
@@ -228,12 +229,18 @@ def open_machine_image_for(machine_name):
     try:
         rel = machine_config["imgkinematic"]
     except KeyError:
-        raise ValueError("MachineConfigError: une cle est absente dans le fichier JSON")
+        raise ValueError(error_message(
+            ErrorCategory.MACHINE_CONFIG,
+            "une cle est absente dans le fichier JSON",
+        ))
 
     base = Path(__file__).parent
     image_path = Path(base / rel)
     if not image_path.exists():
-        raise ValueError(f"MachineConfigError: l'image specifiee est introuvable : {image_path}")
+        raise ValueError(error_message(
+            ErrorCategory.MACHINE_CONFIG,
+            f"l'image specifiee est introuvable : {image_path}",
+        ))
     os.startfile(image_path)
 
 
@@ -242,7 +249,10 @@ def generate_machine_html_for(machine_name, output_folder):
     MachinesConfigLoader.load_config()
     machine_config: JsonDict = MachinesConfigLoader.get_machine(machine_name)
     if not machine_config:
-        raise ValueError(f"MachineConfigError: machine introuvable : {machine_name}")
+        raise ValueError(error_message(
+            ErrorCategory.MACHINE_CONFIG,
+            f"machine introuvable : {machine_name}",
+        ))
 
     html_path = write_machine_html(output_folder, machine_name, machine_config)
     os.startfile(html_path)

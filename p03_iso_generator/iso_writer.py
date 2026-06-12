@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
+from app_errors import ErrorCategory, error_message
 from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, RotationDirection, RotationUnit, ToolComp, ToolType
 from p01_machines_config.machine_parameters import JsonDict, MachineParameters
 from p03_iso_generator.iso_format import format_float_to_iso
@@ -82,7 +83,10 @@ class IsoWriter:
 
         # Controle minimal avant de choisir le profil MILL/TURN.
         if tool.tool_type is None:
-            raise ValueError("MachiningProfileError: type outil absent avant changement outil/broche")
+            raise ValueError(error_message(
+                ErrorCategory.MACHINING_PROFILE,
+                "type outil absent avant changement outil/broche",
+            ))
 
         # Validation de la selection outil/broche pour s'assurer que le changement d'outil/broche est coherent avec le profil de fraisage/tournage.
         selection = MachiningSelection(tool=tool, spindle=spindle)

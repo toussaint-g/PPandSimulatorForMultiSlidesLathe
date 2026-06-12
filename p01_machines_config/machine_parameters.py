@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 from typing import TypeAlias
+from app_errors import ErrorCategory, error_message
 from p01_machines_config.machine_enums import RotationDirection, ToolComp, ToolType
 
 
@@ -28,12 +29,12 @@ def normalize_gm_code(code):
 def _normalize_axis_vector(workplane_vector: object) -> tuple[float, float, float]:
     """Normalise un vecteur de plan en axe principal, independamment du signe."""
     if not isinstance(workplane_vector, (list, tuple)) or len(workplane_vector) != 3:
-        raise ValueError("MachineConfigError: vecteur workplane invalide")
+        raise ValueError(error_message(ErrorCategory.MACHINE_CONFIG, "vecteur workplane invalide"))
 
     try:
         vector = tuple(abs(float(component)) for component in workplane_vector)
     except (TypeError, ValueError):
-        raise ValueError("MachineConfigError: vecteur workplane invalide")
+        raise ValueError(error_message(ErrorCategory.MACHINE_CONFIG, "vecteur workplane invalide"))
 
     if vector == (0.0, 0.0, 1.0):
         return vector
@@ -41,7 +42,7 @@ def _normalize_axis_vector(workplane_vector: object) -> tuple[float, float, floa
         return vector
     if vector == (1.0, 0.0, 0.0):
         return vector
-    raise ValueError("MachineConfigError: vecteur workplane non supporte")
+    raise ValueError(error_message(ErrorCategory.MACHINE_CONFIG, "vecteur workplane non supporte"))
 
 
 def _extract_tool_change_point_x_for_t0(tool_change_point_x: object) -> float:
@@ -49,18 +50,18 @@ def _extract_tool_change_point_x_for_t0(tool_change_point_x: object) -> float:
     try:
         return float(tool_change_point_x)
     except (TypeError, ValueError):
-        raise ValueError("MachineConfigError: toolchangepointxforT0 invalide")
+        raise ValueError(error_message(ErrorCategory.MACHINE_CONFIG, "toolchangepointxforT0 invalide"))
 
 
 def _extract_vector(vector: object, field_name: str) -> list[float]:
     """Extrait un vecteur 3D numerique depuis la configuration machine."""
     if not isinstance(vector, (list, tuple)) or len(vector) != 3:
-        raise ValueError(f"MachineConfigError: vecteur {field_name} invalide")
+        raise ValueError(error_message(ErrorCategory.MACHINE_CONFIG, f"vecteur {field_name} invalide"))
 
     try:
         return [float(component) for component in vector]
     except (TypeError, ValueError):
-        raise ValueError(f"MachineConfigError: vecteur {field_name} invalide")
+        raise ValueError(error_message(ErrorCategory.MACHINE_CONFIG, f"vecteur {field_name} invalide"))
 
 
 def _get_numbered_config(configs: JsonDict, item_number: int, item_label: str) -> JsonDict | None:
@@ -69,7 +70,10 @@ def _get_numbered_config(configs: JsonDict, item_number: int, item_label: str) -
     if item_config is None:
         return None
     if not isinstance(item_config, dict):
-        raise ValueError(f"MachineConfigError: configuration {item_label} {item_number} invalide")
+        raise ValueError(error_message(
+            ErrorCategory.MACHINE_CONFIG,
+            f"configuration {item_label} {item_number} invalide",
+        ))
     return item_config
 
 
@@ -77,21 +81,30 @@ def _get_required_numbered_config(configs: JsonDict, item_number: int, item_labe
     """Retourne une configuration indexee par numero ou leve une erreur."""
     item_config = _get_numbered_config(configs, item_number, item_label)
     if item_config is None:
-        raise ValueError(f"MachineConfigError: {item_label} {item_number} introuvable")
+        raise ValueError(error_message(ErrorCategory.MACHINE_CONFIG, f"{item_label} {item_number} introuvable"))
     return item_config
 
 
 def _extract_required_int(value: object, field_name: str, item_label: str, item_number: int) -> int:
     """Extrait un entier obligatoire depuis une configuration numerotee."""
     if isinstance(value, bool):
-        raise ValueError(f"MachineConfigError: {field_name} invalide pour {item_label} {item_number}")
+        raise ValueError(error_message(
+            ErrorCategory.MACHINE_CONFIG,
+            f"{field_name} invalide pour {item_label} {item_number}",
+        ))
 
     try:
         int_value = int(value)
     except (TypeError, ValueError):
-        raise ValueError(f"MachineConfigError: {field_name} invalide pour {item_label} {item_number}")
+        raise ValueError(error_message(
+            ErrorCategory.MACHINE_CONFIG,
+            f"{field_name} invalide pour {item_label} {item_number}",
+        ))
     if value != int_value and str(value) != str(int_value):
-        raise ValueError(f"MachineConfigError: {field_name} invalide pour {item_label} {item_number}")
+        raise ValueError(error_message(
+            ErrorCategory.MACHINE_CONFIG,
+            f"{field_name} invalide pour {item_label} {item_number}",
+        ))
     return int_value
 
 
@@ -144,7 +157,10 @@ class MachineParameters:
         code_key = "spindletocaxison" if c_axis_on else "spindletocaxisoff"
         spindle_code = spindle_config.get(code_key)
         if not spindle_code:
-            raise ValueError(f"MachineConfigError: code {code_key} absent pour la broche {spindle_number}")
+            raise ValueError(error_message(
+                ErrorCategory.MACHINE_CONFIG,
+                f"code {code_key} absent pour la broche {spindle_number}",
+            ))
         return normalize_gm_code(str(spindle_code))
 
     def get_code_for_spindle_brake(self, spindle_number: int, brake_on: bool) -> str:
@@ -153,7 +169,10 @@ class MachineParameters:
         code_key = "spindlebrakeon" if brake_on else "spindlebrakeoff"
         spindle_code = spindle_config.get(code_key)
         if not spindle_code:
-            raise ValueError(f"MachineConfigError: code {code_key} absent pour la broche {spindle_number}")
+            raise ValueError(error_message(
+                ErrorCategory.MACHINE_CONFIG,
+                f"code {code_key} absent pour la broche {spindle_number}",
+            ))
         return normalize_gm_code(str(spindle_code))
 
     def get_code_for_turn_spindle(self, spindle_number: int, rotation_direction: RotationDirection | None = None) -> str:
@@ -166,10 +185,16 @@ class MachineParameters:
         elif rotation_direction is None:
             rotation_code = spindle_config.get("spindlestop")
         else:
-            raise ValueError(f"MachineConfigError: sens de broche '{rotation_direction}' non supporte")
+            raise ValueError(error_message(
+                ErrorCategory.MACHINE_CONFIG,
+                f"sens de broche '{rotation_direction}' non supporte",
+            ))
 
         if not rotation_code:
-            raise ValueError(f"MachineConfigError: code de rotation absent pour la broche {spindle_number}")
+            raise ValueError(error_message(
+                ErrorCategory.MACHINE_CONFIG,
+                f"code de rotation absent pour la broche {spindle_number}",
+            ))
         return normalize_gm_code(str(rotation_code))
 
     def get_required_tool_config(self, tool_number: int) -> JsonDict:
@@ -216,11 +241,14 @@ class MachineParameters:
         elif rotation_direction is None:
             rotation_code = tool_config.get("toolstop")
         else:
-            raise ValueError(f"MachineConfigError: sens de broche '{rotation_direction}' non supporte")
+            raise ValueError(error_message(
+                ErrorCategory.MACHINE_CONFIG,
+                f"sens de broche '{rotation_direction}' non supporte",
+            ))
 
         if not rotation_code:
             raise ValueError(
-                f"MachineConfigError: code de rotation absent pour l'outil {tool_number}."
+                error_message(ErrorCategory.MACHINE_CONFIG, f"code de rotation absent pour l'outil {tool_number}")
             )
         return normalize_gm_code(str(rotation_code))
 
@@ -233,7 +261,7 @@ class MachineParameters:
         """Retourne le code de broche selon le type d'outil actif."""
         if self.get_tool_type(tool_number) == ToolType.TURN:
             if spindle_number is None:
-                raise ValueError("MachineConfigError: SPINDL_NAME absent pour un outil TURN")
+                raise ValueError(error_message(ErrorCategory.MACHINE_CONFIG, "SPINDL_NAME absent pour un outil TURN"))
             return self.get_code_for_turn_spindle(spindle_number, rotation_direction)
         return self.get_code_for_tool_rotation(tool_number, rotation_direction)
 
@@ -260,7 +288,10 @@ class MachineParameters:
             return "XZ", work_plane_code
         if work_plane_code == self.yz_work_plane_code:
             return "YZ", work_plane_code
-        raise ValueError(f"MachineConfigError: code plan de travail '{work_plane_code}' non supporte")
+        raise ValueError(error_message(
+            ErrorCategory.MACHINE_CONFIG,
+            f"code plan de travail '{work_plane_code}' non supporte",
+        ))
 
     def get_tool_compensation_code_for_tool(self, tool_number: int, tool_compensation: ToolComp) -> str:
         """Retourne le code ISO de compensation outil associe a l'outil et au mode demandes."""
@@ -273,12 +304,15 @@ class MachineParameters:
             compensation_code = tool_config.get("toolcompoff")
         else:
             raise ValueError(
-                f"MachineConfigError: mode de compensation outil '{tool_compensation}' non supporte"
+                error_message(ErrorCategory.MACHINE_CONFIG, f"mode de compensation outil '{tool_compensation}' non supporte")
             )
 
         if not compensation_code:
             raise ValueError(
-                f"MachineConfigError: code de compensation absent pour l'outil {tool_number} dans le canal {self.channel_name}"
+                error_message(
+                    ErrorCategory.MACHINE_CONFIG,
+                    f"code de compensation absent pour l'outil {tool_number} dans le canal {self.channel_name}",
+                )
             )
         return normalize_gm_code(str(compensation_code))
 
@@ -288,7 +322,10 @@ class MachineParameters:
         try:
             channel_name = next(iter(machine_config["listofchannels"]))
         except StopIteration:
-            raise ValueError("MachineConfigError: aucun canal n'est defini dans le fichier JSON")
+            raise ValueError(error_message(
+                ErrorCategory.MACHINE_CONFIG,
+                "aucun canal n'est defini dans le fichier JSON",
+            ))
         return cls.from_config(machine_config, channel_name)
 
     @classmethod
@@ -338,4 +375,7 @@ class MachineParameters:
                 ipartvector=machine_informations.get("ipartvector"),
             )
         except KeyError:
-            raise ValueError("MachineConfigError: une cle est absente dans le fichier JSON")
+            raise ValueError(error_message(
+                ErrorCategory.MACHINE_CONFIG,
+                "une cle est absente dans le fichier JSON",
+            ))

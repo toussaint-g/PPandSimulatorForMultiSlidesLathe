@@ -4,6 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TypeAlias
 
+from app_errors import ErrorCategory, error_message
+
 
 JsonDict: TypeAlias = dict[str, object]
 
@@ -53,4 +55,7 @@ class ToolPathParameters:
                 tool_path_c_axis_resolution=toolpath_viewer_config["caxisresolution"],
             )
         except KeyError:
-            raise ValueError("ToolPathConfigError: une cle est absente dans le fichier JSON")
+            raise ValueError(error_message(
+                ErrorCategory.TOOLPATH_CONFIG,
+                "une cle est absente dans le fichier JSON",
+            ))

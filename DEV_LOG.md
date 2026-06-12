@@ -7,10 +7,7 @@
 ### Prochaines actions:
 - Gestion des synchronisations des canaux.
 - Regenerer le fichier linear_3x_PATH1.aptsource depuis CATIA.
-- Revoir la partie apply_tool_update dans le writer car genere des C0 avant les C... Mauvaise reaction car si pas de changement d'outil, doit continuer sans remettre le C0.
 - Finaliser la partie caxis_move du writer et l'appel depuis le handler.
-- Reprendre tous les messages d'erreur (CatiaConfigError, MachineConfigError, etc...) pour les rationnaliser.
-- Enlever de machine_state, les parametres repris maintenant par les class spindle & tool.
 ### Actions futures:
 - Separer toutes les briques (generateur, analyseur, simulateur)??
 - Creer un HTML pour l'affichage des configurations machines. Structurer avec JSON pour l'interpretation des parametres du JSON machine et leurs valeurs.

@@ -6,6 +6,7 @@ import math
 from functools import partial
 from typing import Callable
 
+from app_errors import ErrorCategory, error_message, iso_error, unmanaged_diagnostic
 from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, RotationDirection, RotationUnit, ToolComp, ToolType, AxisOfRotation
 from p03_iso_generator.apt_parser import csv_floats, csv_tokens
 from p03_iso_generator.helical import emit_helical_move, emit_helical_not_supported, parse_helical_definition, solve_helical_definition
@@ -32,12 +33,18 @@ def _get_tool_k_vector(state: WriterState, iso_writer: IsoWriter) -> tuple[float
     tool_config = iso_writer.machine.get_required_tool_config(state.tool.number)
     tool_vector = tool_config.get("ktoolvector")
     if not isinstance(tool_vector, (list, tuple)) or len(tool_vector) != 3:
-        raise ValueError(f"MachineConfigError: ktoolvector absent ou invalide pour l'outil {state.tool.number}")
+        raise ValueError(error_message(
+            ErrorCategory.MACHINE_CONFIG,
+            f"ktoolvector absent ou invalide pour l'outil {state.tool.number}",
+        ))
     tool_i = float(tool_vector[0])
     tool_j = float(tool_vector[1])
     tool_k = float(tool_vector[2])
     if (tool_i, tool_j, tool_k) in ((0.0, 1.0, 0.0), (0.0, -1.0, 0.0)):
-        raise ValueError(f"MachineConfigError: ktoolvector aligne sur Y non supporte pour l'outil {state.tool.number}")
+        raise ValueError(error_message(
+            ErrorCategory.MACHINE_CONFIG,
+            f"ktoolvector aligne sur Y non supporte pour l'outil {state.tool.number}",
+        ))
     return tool_i, tool_j, tool_k
 
 
@@ -45,7 +52,10 @@ def _validate_spindle_vector(spindle_vector: object, spindle_number: int) -> tup
     """Valide le ispindlevector de la broche active."""
     if not isinstance(spindle_vector, (list, tuple)) or len(spindle_vector) != 3:
         raise ValueError(
-            f"MachineConfigError: ispindlevector absent ou invalide pour la broche {spindle_number}"
+            error_message(
+                ErrorCategory.MACHINE_CONFIG,
+                f"ispindlevector absent ou invalide pour la broche {spindle_number}",
+            )
         )
 
     try:
@@ -53,10 +63,16 @@ def _validate_spindle_vector(spindle_vector: object, spindle_number: int) -> tup
         path_j = float(spindle_vector[1])
         path_k = float(spindle_vector[2])
     except (TypeError, ValueError):
-        raise ValueError(f"MachineConfigError: ispindlevector invalide pour la broche {spindle_number}")
+        raise ValueError(error_message(
+            ErrorCategory.MACHINE_CONFIG,
+            f"ispindlevector invalide pour la broche {spindle_number}",
+        ))
 
     if (path_i, path_j, path_k) not in ((1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)):
-        raise ValueError(f"MachineConfigError: ispindlevector non supporte pour la broche {spindle_number}")
+        raise ValueError(error_message(
+            ErrorCategory.MACHINE_CONFIG,
+            f"ispindlevector non supporte pour la broche {spindle_number}",
+        ))
     return path_i, path_j, path_k
 
 
@@ -68,7 +84,10 @@ def _get_active_spindle_vector(state: WriterState) -> tuple[float, float, float]
         or state.spindle.vector_j is None
         or state.spindle.vector_k is None
     ):
-        raise ValueError("MachineConfigError: SPINDL_NAME absent avant un mouvement de fraisage")
+        raise ValueError(error_message(
+            ErrorCategory.MACHINE_CONFIG,
+            "SPINDL_NAME absent avant un mouvement de fraisage",
+        ))
     return state.spindle.vector_i, state.spindle.vector_j, state.spindle.vector_k
 
 
@@ -160,7 +179,10 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     json_tool_type = iso_writer.machine.get_tool_type(state.tool.number)
     if json_tool_type != state.tool.tool_type:
         raise ValueError(
-            f"MachineConfigError: type outil LOADTL {state.tool.tool_type.value} different du JSON {json_tool_type.value} pour l'outil {state.tool.number}"
+            error_message(
+                ErrorCategory.MACHINE_CONFIG,
+                f"type outil LOADTL {state.tool.tool_type.value} different du JSON {json_tool_type.value} pour l'outil {state.tool.number}",
+            )
         )
     # Avant le changement d'outil, on deplace la machine au point de changement d'outil pour eviter les collisions.
     state.position_x = iso_writer.machine.get_tool_change_point_x_for_t0()
@@ -183,7 +205,10 @@ def h_spindle_name(apt_keyword: str, argument_text: str, state: WriterState, iso
     # Verification de la coherence entre la broche declaree et l'outil lie a cette broche.
     if state.tool.linked_spindle_number != state.spindle.number:
         raise ValueError(
-            f"ATTENTION: broche {state.spindle.number} selectionnee dans CATIA alors que l'outil {state.tool.number} est lie a la broche {state.tool.linked_spindle_number}"
+            error_message(
+                ErrorCategory.CATIA_CONFIG,
+                f"broche {state.spindle.number} selectionnee dans CATIA alors que l'outil {state.tool.number} est lie a la broche {state.tool.linked_spindle_number}",
+            )
         )
 
 
@@ -271,8 +296,10 @@ def h_goto(apt_keyword: str, argument_text: str, state: WriterState, iso_writer:
         )
         if new_c_value is None:
             iso_writer.comment(
-                "ERREUR: VECTEUR IJK INACCESSIBLE AVEC AXE C SEUL "
-                f"I{new_i_value} J{new_j_value} K{new_k_value}"
+                iso_error(
+                    "vecteur IJK inaccessible avec axe C seul "
+                    f"I{new_i_value} J{new_j_value} K{new_k_value}"
+                )
             )
             return
         new_x_value, new_y_value, new_z_value = _rotate_coordinates_around_z(
@@ -380,7 +407,7 @@ def h_rotabl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
         else:
             state.position_c -= rotabl_amount
     else:
-        iso_writer.comment(f"ROTABL non supporte pour axe {rotabl_axis.value}")
+        iso_writer.comment(unmanaged_diagnostic("ROTABL", reason=f"axe {rotabl_axis.value} non supporte"))
         return
     
 
@@ -404,7 +431,7 @@ def h_fini(apt_keyword: str, argument_text: str, state: WriterState, iso_writer:
 
 def h_default(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Gere les commandes non reconnues en les commentant."""
-    iso_writer.comment(f"NON GERE: {apt_keyword}/{argument_text}".strip())
+    iso_writer.comment(unmanaged_diagnostic(apt_keyword, argument_text))
 
 
 DISPATCH: dict[str, Handler] = {

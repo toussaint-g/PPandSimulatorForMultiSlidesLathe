@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import math
 import re
 
+from app_errors import unmanaged_diagnostic
 from p01_machines_config.machine_enums import MotionMode
 from p03_iso_generator.apt_parser import csv_floats
 from p03_iso_generator.geometric_calculations import (
@@ -60,10 +61,7 @@ class TlonArcSolution:
 
 def emit_tlon_not_supported(argument_text: str, iso_writer: IsoWriter, reason: str | None = None) -> None:
     """Centralise les messages de non-support pour TLON."""
-    if reason:
-        iso_writer.comment(f"NON GERE: TLON/{argument_text} ({reason})")
-        return
-    iso_writer.comment(f"NON GERE: TLON/{argument_text}")
+    iso_writer.comment(unmanaged_diagnostic("TLON", argument_text, reason))
 
 
 def _rotate_coordinates_around_z(position_x: float, position_y: float, position_z: float, angle_degrees: float) -> tuple[float, float, float]:

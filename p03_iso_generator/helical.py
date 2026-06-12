@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 
+from app_errors import unmanaged_diagnostic
 from p03_iso_generator.apt_parser import csv_tokens
 from p03_iso_generator.geometric_calculations import (
     ccw_tangent_vector as geometry_ccw_tangent_vector,
@@ -58,10 +59,7 @@ class HelicalMoveSolution:
 
 def emit_helical_not_supported(argument_text: str, iso_writer: IsoWriter, reason: str | None = None) -> None:
     """Centralise les messages de non-support pour HELICAL."""
-    if reason:
-        iso_writer.comment(f"NON GERE: HELICAL/{argument_text} ({reason})")
-        return
-    iso_writer.comment(f"NON GERE: HELICAL/{argument_text}")
+    iso_writer.comment(unmanaged_diagnostic("HELICAL", argument_text, reason))
 
 
 def _rotate_coordinates_around_z(position_x: float, position_y: float, position_z: float, angle_degrees: float) -> tuple[float, float, float]:

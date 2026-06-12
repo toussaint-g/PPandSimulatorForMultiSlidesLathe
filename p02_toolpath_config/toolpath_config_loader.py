@@ -3,6 +3,8 @@
 import json
 from typing import TypeAlias
 
+from app_errors import ErrorCategory, error_message
+
 
 JsonDict: TypeAlias = dict[str, object]
 
@@ -20,5 +22,8 @@ class ToolPathConfigLoader:
                 ToolPathConfigLoader.data = json.load(file)
         except FileNotFoundError:
             raise FileNotFoundError(
-                "Erreur : Le fichier de configuration toolpath (.json) est introuvable."
+                error_message(
+                    ErrorCategory.TOOLPATH_CONFIG,
+                    "le fichier de configuration toolpath (.json) est introuvable",
+                )
             )
