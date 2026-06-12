@@ -294,7 +294,6 @@ class WriterState:
     feedrate_value: Optional[float] = None
     feedrate_unit: Optional[FeedrateUnit] = None
     # Spindle
-    spindle_on: bool = False
     spindle: SpindleSelection = field(default_factory=SpindleSelection)
     # Tool
     tool: ToolSelection = field(default_factory=ToolSelection)

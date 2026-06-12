@@ -15,6 +15,7 @@
 - Separer toutes les briques (generateur, analyseur, simulateur)??
 - Creer un HTML pour l'affichage des configurations machines. Structurer avec JSON pour l'interpretation des parametres du JSON machine et leurs valeurs.
 - Creer un HTML pour la generation des gammes avec vue des trajectoires en 3D, etc...
+- Voir pour modifier encore le gestion des transition en construisant les etats machine complets (etat courant et last)??
 ### Points a verifier (dans app):
 - Verifier le ROTABL.
 ### Points a verifier (dans CATIA):

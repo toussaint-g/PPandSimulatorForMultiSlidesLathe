@@ -84,37 +84,44 @@ class IsoWriter:
         if tool.tool_type is None:
             raise ValueError("MachiningProfileError: type outil absent avant changement outil/broche")
 
-        # Validation de l'etat courant declare par LOADTL/SPINDL_NAME/SPINDL.
+        # Validation de la selection outil/broche pour s'assurer que le changement d'outil/broche est coherent avec le profil de fraisage/tournage.
         selection = MachiningSelection(tool=tool, spindle=spindle)
+        # Le profil de fraisage/tournage determine a partir du type d'outil valide la selection outil/broche pour s'assurer que le changement d'outil/broche est coherent avec le profil de fraisage/tournage.
         get_machining_profile(tool.tool_type).validate(selection, self.machine)
 
-        # Comparaison avec le dernier etat outil/broche deja emis.
+        # Determination de la transition outil/broche a partir de l'etat courant declare et du nouvel etat a emettre.
         transition = ToolTransition.from_emission_state(
             self.emission_state,
             tool,
             spindle,
             tool_change_processing,
         )
+        # Validation de la transition pour s'assurer que les changements d'outil/broche sont coherents avec l'etat courant declare et le profil de fraisage/tournage.
         transition.validate()
-
+        # Determination des lignes a emettre pour la transition outil/broche et emission de ces lignes.
         result = ToolUpdateResult()
+        # Indicateur pour savoir si une rotation a deja ete emise par les codes de transition pour eviter les emissions redondantes de rotation.
         rotation_emitted = False
 
+        # Si un changement d'outil doit etre traite, on emet les lignes de changement outil et de transition associees.
         if tool_change_processing:
-            # LOADTL actif : on degage, puis on emet le changement outil.
+            # Degagement avant changement outil si une position en X est connue pour eviter les collisions.
             self._emit_tool_clearance(position_x)
-
-            # Arret de l'ancien outil ou de l'ancienne broche selon la transition.
+            # Emission de l'arret de l'ancien outil ou de l'ancienne broche si la transition l'exige.
             self._emit_previous_stop_for_transition(transition)
+            # Emission du changement outil et des codes de transition specifiques au type de transition.
             self._emit_tool_change(tool)
+            # Emission des codes de transition specifiques au type de transition et determination si une rotation a ete emise.
             rotation_emitted = self._emit_tool_transition(transition, result)
 
-        # SPINDL peut aussi seulement changer vitesse/unite/direction.
+        # Si une rotation doit etre emise et n'a pas encore ete emise par les codes de transition, on l'emet.
         if transition.is_rotation_change and not rotation_emitted:
+            # Emission de la rotation de broche ou d'outil tournant si elle n'a pas deja ete emise par les codes de transition.
             self._emit_rotation(tool, spindle)
 
-        # Le nouvel etat devient la reference pour la prochaine transition.
+        # Memorisation du nouvel etat outil/broche apres emission.
         self._store_tool_update(tool, spindle)
+        # Retour des positions logiques forcees par l'emission de changement outil/broche pour que le post-processeur puisse les prendre en compte dans son etat courant declare.
         return result
 
 
@@ -167,8 +174,8 @@ class IsoWriter:
             self._emit_turn_activation(spindle, result)
             return True
 
-        # Activation outil tournant et axe C apres premier outil MILL ou sortie du tournage.
-        if transition_kind in (TransitionKind.FIRST_MILL, TransitionKind.TURN_TO_MILL):
+        # Activation outil tournant de fraisage apres premier outil MILL, sortie du tournage ou changement d'outil de fraisage.
+        if transition_kind in (TransitionKind.FIRST_MILL, TransitionKind.TURN_TO_MILL, TransitionKind.MILL_TO_MILL):
             self._emit_mill_activation(tool, spindle, result)
             return True
 
