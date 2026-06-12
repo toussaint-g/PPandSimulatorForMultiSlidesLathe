@@ -10,6 +10,7 @@
 - Revoir la partie apply_tool_update dans le writer car genere des C0 avant les C... Mauvaise reaction car si pas de changement d'outil, doit continuer sans remettre le C0.
 - Finaliser la partie caxis_move du writer et l'appel depuis le handler.
 - Reprendre tous les messages d'erreur (CatiaConfigError, MachineConfigError, etc...) pour les rationnaliser.
+- Enlever de machine_state, les parametres repris maintenant par les class spindle & tool.
 ### Actions futures:
 - Separer toutes les briques (generateur, analyseur, simulateur)??
 - Creer un HTML pour l'affichage des configurations machines. Structurer avec JSON pour l'interpretation des parametres du JSON machine et leurs valeurs.
@@ -27,6 +28,7 @@
 - Les outils positionnes avec un vecteur K[0, 1, 0] ne sont pas pris en compte.
 - ROTABL utilisable en axe C et avec des outils de type MILL frontaux uniquement. Si un autre axe ou un autre type d'outil sont selectionnes, emission d'un message d'erreur.
 - Listofspindles du json machine doit refleter les différentes broches definies dans CATIA.
+- Dans CATIA pour BW128, 4 broches avec 4 reperes differents doivent-être crees. Les 3 premiers s'explique simplement (repere representatifs des canaux) mais le 4ème à pour but de pouvoir utiliser les T43 a T47 ou T41 et T42 (canal 3 pour usiner sur COP). Pas d'autres possiblités dans CATIA pour ce point.
 
 ## Partie analyse:
 ### Prochaines actions:

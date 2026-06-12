@@ -177,7 +177,7 @@ def parse_helical_definition(argument_text: str) -> HelicalMoveDefinition | None
 
 def solve_helical_definition(definition: HelicalMoveDefinition, state: WriterState, iso_writer: IsoWriter) -> HelicalMoveSolution | None:
     """Resout un HELICAL si son axe est aligne avec l'axe outil et un plan machine."""
-    if not state.tool_number:
+    if not state.tool.number:
         emit_helical_not_supported(definition.raw_argument_text, iso_writer, "outil courant absent")
         return None
 
@@ -188,7 +188,7 @@ def solve_helical_definition(definition: HelicalMoveDefinition, state: WriterSta
 
     transformed_definition = _transform_helical_definition_to_current_c(definition, state.position_c)
 
-    tool_config = iso_writer.machine.get_required_tool_config(state.tool_number)
+    tool_config = iso_writer.machine.get_required_tool_config(state.tool.number)
     tool_axis_vector = tool_config.get("workplane")
     if not isinstance(tool_axis_vector, (list, tuple)) or len(tool_axis_vector) != 3:
         emit_helical_not_supported(definition.raw_argument_text, iso_writer, "axe outil JSON invalide")
@@ -208,7 +208,7 @@ def solve_helical_definition(definition: HelicalMoveDefinition, state: WriterSta
         emit_helical_not_supported(definition.raw_argument_text, iso_writer, "axe HELICAL different de l'axe outil")
         return None
 
-    work_plane, work_plane_code = iso_writer.machine.get_tool_geometry_work_plane(state.tool_number)
+    work_plane, work_plane_code = iso_writer.machine.get_tool_geometry_work_plane(state.tool.number)
     axis_matches_work_plane = (
         (work_plane == "XY" and axis_i <= tolerance and axis_j <= tolerance and abs(axis_k - 1.0) <= tolerance)
         or (work_plane == "XZ" and axis_i <= tolerance and abs(axis_j - 1.0) <= tolerance and axis_k <= tolerance)

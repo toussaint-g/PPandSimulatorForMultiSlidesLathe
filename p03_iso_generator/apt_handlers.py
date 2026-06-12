@@ -29,15 +29,15 @@ def _vector_xy_angle_degrees(vector_i: float, vector_j: float) -> float:
 
 def _get_tool_k_vector(state: WriterState, iso_writer: IsoWriter) -> tuple[float, float, float]:
     """Retourne le ktoolvector de l'outil courant."""
-    tool_config = iso_writer.machine.get_required_tool_config(state.tool_number)
+    tool_config = iso_writer.machine.get_required_tool_config(state.tool.number)
     tool_vector = tool_config.get("ktoolvector")
     if not isinstance(tool_vector, (list, tuple)) or len(tool_vector) != 3:
-        raise ValueError(f"MachineConfigError: ktoolvector absent ou invalide pour l'outil {state.tool_number}")
+        raise ValueError(f"MachineConfigError: ktoolvector absent ou invalide pour l'outil {state.tool.number}")
     tool_i = float(tool_vector[0])
     tool_j = float(tool_vector[1])
     tool_k = float(tool_vector[2])
     if (tool_i, tool_j, tool_k) in ((0.0, 1.0, 0.0), (0.0, -1.0, 0.0)):
-        raise ValueError(f"MachineConfigError: ktoolvector aligne sur Y non supporte pour l'outil {state.tool_number}")
+        raise ValueError(f"MachineConfigError: ktoolvector aligne sur Y non supporte pour l'outil {state.tool.number}")
     return tool_i, tool_j, tool_k
 
 
@@ -63,18 +63,18 @@ def _validate_spindle_vector(spindle_vector: object, spindle_number: int) -> tup
 def _get_active_spindle_vector(state: WriterState) -> tuple[float, float, float]:
     """Retourne le ispindlevector de la broche active declaree par SPINDL_NAME."""
     if (
-        state.spindle_number is None
-        or state.spindle_vector_i is None
-        or state.spindle_vector_j is None
-        or state.spindle_vector_k is None
+        state.spindle.number is None
+        or state.spindle.vector_i is None
+        or state.spindle.vector_j is None
+        or state.spindle.vector_k is None
     ):
         raise ValueError("MachineConfigError: SPINDL_NAME absent avant un mouvement de fraisage")
-    return state.spindle_vector_i, state.spindle_vector_j, state.spindle_vector_k
+    return state.spindle.vector_i, state.spindle.vector_j, state.spindle.vector_k
 
 
 def _is_milling_tool(state: WriterState, iso_writer: IsoWriter) -> bool:
     """Retourne True si l'outil courant est declare en fraisage dans la config machine."""
-    return iso_writer.machine.get_tool_type(state.tool_number) == ToolType.MILL
+    return iso_writer.machine.get_tool_type(state.tool.number) == ToolType.MILL
 
 
 def _compute_c_axis_from_ijk(
@@ -142,7 +142,7 @@ def h_tprint(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     # Exemple accepte : TPRINT/Fraise D1.0 X 3
     tprint_tokens = csv_tokens(argument_text)
     tool_comment = tprint_tokens[0].upper()
-    state.tool_comment = tool_comment
+    state.tool.comment = tool_comment
 
 
 def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
@@ -152,15 +152,15 @@ def h_loadtl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     tool_tokens = csv_tokens(argument_text)
     tool_number = int(tool_tokens[0])
     tool_type = ToolType(str(tool_tokens[-1]).strip().upper())
-    state.tool_number = tool_number
-    state.tool_type = tool_type
-    state.linked_spindle_number = iso_writer.machine.get_tool_linked_spindle(tool_number)
+    state.tool.number = tool_number
+    state.tool.tool_type = tool_type
+    state.tool.linked_spindle_number = iso_writer.machine.get_tool_linked_spindle(tool_number)
 
     # On verifie que le type d'outil dans l'APT correspond a celui declare dans la config machine pour eviter les incoherences.
-    json_tool_type = iso_writer.machine.get_tool_type(state.tool_number)
-    if json_tool_type != state.tool_type:
+    json_tool_type = iso_writer.machine.get_tool_type(state.tool.number)
+    if json_tool_type != state.tool.tool_type:
         raise ValueError(
-            f"MachineConfigError: type outil LOADTL {state.tool_type.value} different du JSON {json_tool_type.value} pour l'outil {state.tool_number}"
+            f"MachineConfigError: type outil LOADTL {state.tool.tool_type.value} different du JSON {json_tool_type.value} pour l'outil {state.tool.number}"
         )
     # Avant le changement d'outil, on deplace la machine au point de changement d'outil pour eviter les collisions.
     state.position_x = iso_writer.machine.get_tool_change_point_x_for_t0()
@@ -175,25 +175,16 @@ def h_spindle_name(apt_keyword: str, argument_text: str, state: WriterState, iso
     spindle_number = int(spindle_tokens[3])
     spindle_vector = iso_writer.machine.get_spindle_vector(spindle_number)
     spindle_i, spindle_j, spindle_k = _validate_spindle_vector(spindle_vector, spindle_number)
-    state.spindle_number = spindle_number
-    state.spindle_vector_i = spindle_i
-    state.spindle_vector_j = spindle_j
-    state.spindle_vector_k = spindle_k
+    state.spindle.number = spindle_number
+    state.spindle.vector_i = spindle_i
+    state.spindle.vector_j = spindle_j
+    state.spindle.vector_k = spindle_k
 
     # Verification de la coherence entre la broche declaree et l'outil lie a cette broche.
-    if state.linked_spindle_number != state.spindle_number:
+    if state.tool.linked_spindle_number != state.spindle.number:
         raise ValueError(
-            f"ATTENTION: broche {state.spindle_number} selectionnee dans CATIA alors que l'outil {state.tool_number} est lie a la broche {state.linked_spindle_number}"
+            f"ATTENTION: broche {state.spindle.number} selectionnee dans CATIA alors que l'outil {state.tool.number} est lie a la broche {state.tool.linked_spindle_number}"
         )
-    
-
-
-
-
-
-
-
-
 
 
 def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
@@ -203,9 +194,9 @@ def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
     rotation_speed = float(rotation_tokens[0])
     rotation_unit = RotationUnit(rotation_tokens[1])
     rotation_direction = RotationDirection(rotation_tokens[2])
-    state.rotation_speed = rotation_speed
-    state.rotation_unit = rotation_unit
-    state.rotation_direction = rotation_direction
+    state.spindle.rotation_speed = rotation_speed
+    state.spindle.rotation_unit = rotation_unit
+    state.spindle.rotation_direction = rotation_direction
 
     # SPINDL finalise l'etat outil/broche et declenche l'emission ISO.
     tool_update = iso_writer.apply_tool_update(
@@ -222,22 +213,6 @@ def h_spindle(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
         state.position_y = tool_update.position_y
 
     state.tool_change_processing = False
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def h_rapid(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
@@ -327,7 +302,7 @@ def h_goto(apt_keyword: str, argument_text: str, state: WriterState, iso_writer:
 
     # N'emet la ligne de deplacement que si au moins un axe change.
     if x_out is not None or y_out is not None or z_out is not None or c_out is not None:
-        iso_writer.linear_move(state.tool_number, state.motion_mode, state.toolComp_mode, state.feedrate_value,
+        iso_writer.linear_move(state.tool.number, state.motion_mode, state.toolComp_mode, state.feedrate_value,
                                state.feedrate_unit, position_x=x_out, position_y=y_out, position_z=z_out,
                                position_c=c_out)
 
@@ -398,7 +373,7 @@ def h_rotabl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     rotabl_axis = AxisOfRotation(rotabl_tokens[2])
 
     # Si CAXIS, on traite sinon, message d'erreur.
-    if rotabl_axis == AxisOfRotation.CAXIS and state.tool_type == ToolType.MILL:
+    if rotabl_axis == AxisOfRotation.CAXIS and state.tool.tool_type == ToolType.MILL:
         # On applique la rotation a l'axe C en fonction du sens de rotation et de l'angle de rotation.
         if rotabl_direction == RotationDirection.CLW:
             state.position_c += rotabl_amount
@@ -424,7 +399,7 @@ def h_rotabl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
 
 def h_fini(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Termine le programme ISO."""
-    iso_writer.footer(state.tool_number, state.spindle_number)
+    iso_writer.footer(state.tool.number, state.spindle.number)
 
 
 def h_default(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:

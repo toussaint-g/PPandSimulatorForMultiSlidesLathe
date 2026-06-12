@@ -330,18 +330,18 @@ def _solve_tlon_arc_in_machine_plane(definition: TlonArcDefinition, work_plane: 
 
 def solve_tlon_circle_xy(definition: TlonArcDefinition, state: WriterState, iso_writer: IsoWriter) -> TlonArcSolution | None:
     """Resout geometriquement un TLON/CIRCLE dans le plan outil courant."""
-    if not state.tool_number:
+    if not state.tool.number:
         emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "outil courant absent")
         return None
 
-    work_plane, work_plane_code = iso_writer.machine.get_tool_geometry_work_plane(state.tool_number)
+    work_plane, work_plane_code = iso_writer.machine.get_tool_geometry_work_plane(state.tool.number)
     transformed_definition = _transform_tlon_definition_to_current_c(definition, state.position_c)
     return _solve_tlon_arc_in_machine_plane(transformed_definition, work_plane, work_plane_code, iso_writer)
 
 
 def solve_tlon_cylndr_definition(definition: TlonArcDefinition, state: WriterState, iso_writer: IsoWriter) -> TlonArcSolution | None:
     """Resout un TLON/CYLNDR si l'axe du cylindre coincide avec un plan machine."""
-    if not state.tool_number:
+    if not state.tool.number:
         emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "outil courant absent")
         return None
     if definition.axis_u is None or definition.axis_v is None or definition.axis_w is None:
@@ -350,9 +350,9 @@ def solve_tlon_cylndr_definition(definition: TlonArcDefinition, state: WriterSta
 
     transformed_definition = _transform_tlon_definition_to_current_c(definition, state.position_c)
 
-    work_plane, work_plane_code = iso_writer.machine.get_tool_geometry_work_plane(state.tool_number)
+    work_plane, work_plane_code = iso_writer.machine.get_tool_geometry_work_plane(state.tool.number)
     tolerance = float(iso_writer.machine.calculation_tolerance)
-    tool_config = iso_writer.machine.get_required_tool_config(state.tool_number)
+    tool_config = iso_writer.machine.get_required_tool_config(state.tool.number)
     tool_axis_vector = tool_config.get("workplane")
     if not isinstance(tool_axis_vector, (list, tuple)) or len(tool_axis_vector) != 3:
         emit_tlon_not_supported(definition.raw_argument_text, iso_writer, "axe outil JSON invalide")

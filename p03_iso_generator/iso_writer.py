@@ -74,20 +74,6 @@ class IsoWriter:
         """Ajoute un commentaire de canal."""
         self.emit(f"(CANAL {channel_number})")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     # TODO: rotation_unit non utilisee. A implementer??
     def apply_tool_update(self, tool: ToolSelection, spindle: SpindleSelection,
                           position_x: float, position_c: float,
@@ -248,7 +234,10 @@ class IsoWriter:
 
     def _store_tool_update(self, tool: ToolSelection, spindle: SpindleSelection) -> None:
         """Memorise l'etat outil/broche qui vient d'etre emis."""
-        self.emission_state.last_selection = MachiningSelection(tool=tool, spindle=spindle)
+        self.emission_state.last_selection = MachiningSelection(
+            tool=tool.copy(),
+            spindle=spindle.copy(),
+        )
 
 
     def _get_emitted_spindle_number(self) -> Optional[int]:
@@ -258,27 +247,9 @@ class IsoWriter:
         return self.emission_state.last_selection.spindle.number
 
 
-
-
-
-
-
-
-
-
-
-
-
     def spindle_stop(self, tool_number: int, spindle_number: Optional[int] = None) -> None:
         """Arrete la broche."""
         self.emit(self.machine.get_spindle_code(tool_number, spindle_number))
-
-
-
-
-
-
-
 
 
     # TODO: a verifier.
@@ -295,9 +266,6 @@ class IsoWriter:
             self.emit(f"{self.machine.rapid_move_code} C{format_float_to_iso(position_c)}")
             self.emit(self.machine.get_code_for_spindle_brake(spindle_number, True))
             self.emission_state.last_c_position = position_c
-
-
-
 
         # Determination du code de mouvement lineaire ou rapide et construction de la ligne de mouvement avec les axes qui ont change.
         motion_code = self.machine.rapid_move_code if motion_mode == MotionMode.RAPID else self.machine.linear_move_code
@@ -336,6 +304,20 @@ class IsoWriter:
 
         # Si au moins une information a changee, on emet la ligne de mouvement.
         self.emit(" ".join(axis_words))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

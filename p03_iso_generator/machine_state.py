@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional
 from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, RotationDirection, RotationUnit, ToolType, ToolComp
@@ -19,16 +19,15 @@ class ToolSelection:
     tool_type: Optional[ToolType] = None
     linked_spindle_number: Optional[int] = None
 
+    def copy(self) -> ToolSelection:
+        """Retourne un instantane independant de la selection outil."""
+        return replace(self)
+
     @classmethod
     def from_writer_state(cls, state: WriterState) -> ToolSelection:
         """Construit une selection outil depuis l'etat APT courant."""
-        # Regroupe les informations outil dispersees dans WriterState.
-        return cls(
-            comment=state.tool_comment,
-            number=state.tool_number,
-            tool_type=state.tool_type,
-            linked_spindle_number=state.linked_spindle_number,
-        )
+        # WriterState porte deja TPRINT et LOADTL dans un seul objet.
+        return state.tool.copy()
 
 
 @dataclass
@@ -42,19 +41,15 @@ class SpindleSelection:
     rotation_unit: Optional[RotationUnit] = None
     rotation_direction: Optional[RotationDirection] = None
 
+    def copy(self) -> SpindleSelection:
+        """Retourne un instantane independant de la selection broche."""
+        return replace(self)
+
     @classmethod
     def from_writer_state(cls, state: WriterState) -> SpindleSelection:
         """Construit une selection broche depuis l'etat APT courant."""
-        # Regroupe SPINDL_NAME et SPINDL dans un seul objet.
-        return cls(
-            number=state.spindle_number,
-            vector_i=state.spindle_vector_i,
-            vector_j=state.spindle_vector_j,
-            vector_k=state.spindle_vector_k,
-            rotation_speed=state.rotation_speed,
-            rotation_unit=state.rotation_unit,
-            rotation_direction=state.rotation_direction,
-        )
+        # WriterState porte deja SPINDL_NAME et SPINDL dans un seul objet.
+        return state.spindle.copy()
 
 
 @dataclass
@@ -62,6 +57,13 @@ class MachiningSelection:
     """Etat outil/broche complet a valider avant emission d'un mouvement."""
     tool: ToolSelection
     spindle: SpindleSelection
+
+    def copy(self) -> MachiningSelection:
+        """Retourne un instantane independant outil/broche."""
+        return MachiningSelection(
+            tool=self.tool.copy(),
+            spindle=self.spindle.copy(),
+        )
 
     @classmethod
     def from_writer_state(cls, state: WriterState) -> MachiningSelection:
@@ -292,20 +294,10 @@ class WriterState:
     feedrate_value: Optional[float] = None
     feedrate_unit: Optional[FeedrateUnit] = None
     # Spindle
-    spindle_number: Optional[int] = None
     spindle_on: bool = False
-    spindle_vector_i: Optional[float] = None
-    spindle_vector_j: Optional[float] = None
-    spindle_vector_k: Optional[float] = None
-    # Rotation
-    rotation_speed: Optional[float] = None
-    rotation_unit: Optional[RotationUnit] = None
-    rotation_direction: Optional[RotationDirection] = None
+    spindle: SpindleSelection = field(default_factory=SpindleSelection)
     # Tool
-    tool_comment: Optional[str] = None
-    tool_number: Optional[int] = None
-    tool_type: Optional[ToolType] = None
-    linked_spindle_number: Optional[int] = None
+    tool: ToolSelection = field(default_factory=ToolSelection)
     # Coolant
     coolant_on: bool = False
     # Position
