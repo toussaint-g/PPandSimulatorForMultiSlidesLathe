@@ -26,6 +26,19 @@ def _resource_uri(resource_name: str) -> str:
     return resource_path.as_uri()
 
 
+def _machine_image_uri(machine_config: JsonDict) -> str:
+    """Retourne une URI file:// vers l'image cinematique declaree dans la config."""
+    image_path = machine_config.get("imgkinematic")
+    if not isinstance(image_path, str) or not image_path:
+        return ""
+
+    image_path = Path(image_path)
+    if not image_path.is_absolute():
+        image_path = Path(__file__).resolve().parents[1] / image_path
+
+    return image_path.as_uri() if image_path.exists() else ""
+
+
 def _safe_filename(name: str) -> str:
     """Nettoie un nom de machine pour l'utiliser comme nom de fichier."""
     safe_characters = [character if character.isalnum() or character in ("-", "_") else "_" for character in name]
@@ -137,9 +150,24 @@ def build_machine_html(machine_name: str, machine_config: JsonDict) -> str:
     }
 
     logo_uri = _resource_uri("logo_sans_fond_small.png")
-    machine_icon_uri = _resource_uri("Machine.png")
-    news_icon_uri = _resource_uri("News.png")
-    attention_icon_uri = _resource_uri("Attention.png")
+    kinematic_icon_uri = _resource_uri("kinematic.png")
+    globals_parameters_icon_uri = _resource_uri("globals_parameters.png")
+    iso_parameters_icon_uri = _resource_uri("iso_parameters.png")
+    spindles_icon_uri = _resource_uri("spindles.png")
+    channels_icon_uri = _resource_uri("channels.png")
+    tools_icon_uri = _resource_uri("tools.png")
+    information_icon_uri = _resource_uri("information.png")
+    warning_icon_uri = _resource_uri("warning.png")
+    machine_image_uri = _machine_image_uri(machine_config)
+    machine_image_block = (
+        f"""
+        <div class="section-block">
+            <div class="section-heading"><img src="{kinematic_icon_uri}" alt=""><h1>Cinematique machine</h1></div>
+            <div class="machine-visual"><img src="{machine_image_uri}" alt="Cinematique machine {escape(machine_name)}"></div>
+        </div>"""
+        if machine_image_uri
+        else ""
+    )
     general_table = _two_column_table(general_items)
     machine_infos_table = _two_column_table(list(machine_infos.items()))
     spindles_table = _matrix_table("Broche", spindles) if spindles else '<p class="empty">Aucune broche declaree.</p>'
@@ -238,7 +266,11 @@ def build_machine_html(machine_name: str, machine_config: JsonDict) -> str:
 
         .news {{ color: var(--accent-dark); }}
         .note {{ color: #9b3b36; }}
-        .note img, .news img {{ margin-right: 12px; flex: 0 0 auto; }}
+        .note img, .news img {{
+            margin-right: 12px;
+            max-height: 40px;
+            max-width: 40px;
+        }}
 
         .section-block {{
             margin: 34px 0 18px;
@@ -258,8 +290,8 @@ def build_machine_html(machine_name: str, machine_config: JsonDict) -> str:
         }}
 
         .section-heading img {{
-            width: 58px;
-            height: auto;
+            max-height: 58px;
+            max-width: 58px;
             filter: drop-shadow(0 4px 8px rgba(39, 50, 56, 0.10));
         }}
 
@@ -267,6 +299,23 @@ def build_machine_html(machine_name: str, machine_config: JsonDict) -> str:
             font-size: 26px;
             color: var(--accent-dark);
             margin: 0;
+        }}
+
+        .machine-visual {{
+            background-color: var(--white);
+            border: 1px solid var(--line);
+            border-radius: 0 12px 12px 0;
+            box-shadow: 0 6px 18px rgba(39, 50, 56, 0.06);
+            padding: 18px;
+            text-align: center;
+        }}
+
+        .machine-visual img {{
+            display: block;
+            max-width: 100%;
+            max-height: 500px;
+            margin: 0 auto;
+            object-fit: contain;
         }}
 
         .table-wrap {{
@@ -340,32 +389,33 @@ def build_machine_html(machine_name: str, machine_config: JsonDict) -> str:
         </div>
 
         <div class="info-panel">
-            <p class="news"><img src="{news_icon_uri}" alt="Information" width="50" height="50">Fiche generee depuis la machine selectionnee dans PPandSimulatorForMultiSlidesLathe.</p>
-            <p class="note"><img src="{attention_icon_uri}" alt="Attention" width="45" height="45">Cette page est un affichage des donnees JSON machine. Les modifications restent a faire dans machines_config.json.</p>
+            <p class="news"><img src="{information_icon_uri}" alt="Information" width="50" height="50">Fiche generee depuis la machine selectionnee dans PPandSimulatorForMultiSlidesLathe.</p>
+            <p class="note"><img src="{warning_icon_uri}" alt="Attention" width="45" height="45">Cette page est un affichage des donnees JSON machine. Les modifications restent a faire dans machines_config.json.</p>
         </div>
+{machine_image_block}
 
         <div class="section-block">
-            <div class="section-heading"><img src="{machine_icon_uri}" alt=""><h1>Informations generales</h1></div>
+            <div class="section-heading"><img src="{globals_parameters_icon_uri}" alt=""><h1>Informations generales</h1></div>
             {general_table}
         </div>
 
         <div class="section-block">
-            <div class="section-heading"><img src="{machine_icon_uri}" alt=""><h1>Parametres ISO machine</h1></div>
+            <div class="section-heading"><img src="{iso_parameters_icon_uri}" alt=""><h1>Parametres ISO machine</h1></div>
             {machine_infos_table}
         </div>
 
         <div class="section-block">
-            <div class="section-heading"><img src="{machine_icon_uri}" alt=""><h1>Broches</h1></div>
+            <div class="section-heading"><img src="{spindles_icon_uri}" alt=""><h1>Broches</h1></div>
             {spindles_table}
         </div>
 
         <div class="section-block">
-            <div class="section-heading"><img src="{machine_icon_uri}" alt=""><h1>Canaux</h1></div>
+            <div class="section-heading"><img src="{channels_icon_uri}" alt=""><h1>Canaux</h1></div>
             {channels_table}
         </div>
 
         <div class="section-block">
-            <div class="section-heading"><img src="{machine_icon_uri}" alt=""><h1>Outils par canal</h1></div>
+            <div class="section-heading"><img src="{tools_icon_uri}" alt=""><h1>Outils par canal</h1></div>
             {tools_table}
         </div>
 

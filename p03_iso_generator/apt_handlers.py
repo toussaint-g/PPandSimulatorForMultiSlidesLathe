@@ -10,7 +10,7 @@ from app_errors import ErrorCategory, error_message, iso_error, unmanaged_diagno
 from p01_machines_config.machine_enums import FeedrateUnit, MotionMode, RotationDirection, RotationUnit, ToolComp, ToolType, AxisOfRotation
 from p03_iso_generator.apt_parser import csv_floats, csv_tokens
 from p03_iso_generator.helical import emit_helical_move, emit_helical_not_supported, parse_helical_definition, solve_helical_definition
-from p03_iso_generator.iso_writer import IsoWriter
+from p03_iso_generator.iso_writer import IsoWriter, ToolUpdateResult
 from p03_iso_generator.machine_state import SpindleSelection, ToolSelection, WriterState
 from p03_iso_generator.tlon import emit_tlon_arc, emit_tlon_not_supported, parse_tlon_definition, solve_tlon_definition
 
@@ -406,6 +406,18 @@ def h_rotabl(apt_keyword: str, argument_text: str, state: WriterState, iso_write
             state.position_c += rotabl_amount
         else:
             state.position_c -= rotabl_amount
+        
+
+
+
+
+
+        iso_writer.rotabl(state.tool, state.spindle, state.position_c)
+
+
+
+
+
     else:
         iso_writer.comment(unmanaged_diagnostic("ROTABL", reason=f"axe {rotabl_axis.value} non supporte"))
         return

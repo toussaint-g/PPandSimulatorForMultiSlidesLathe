@@ -1,16 +1,17 @@
 # Suivi de developpement
 ## Auteur:
 **Toussaint Guillaume**
-## Le 21/05/2026
+## Le 12/06/2026
 
 ## Partie PP:
 ### Prochaines actions:
 - Gestion des synchronisations des canaux.
 - Regenerer le fichier linear_3x_PATH1.aptsource depuis CATIA.
 - Finaliser la partie caxis_move du writer et l'appel depuis le handler.
+- Faire json les titres et les definitions plus explicites pour les parametres de json machine.
+- Remettre tous les fichiers debug, html, etc... dans le dossier roaming (comme app HE ARC). Les autres??
 ### Actions futures:
 - Separer toutes les briques (generateur, analyseur, simulateur)??
-- Creer un HTML pour l'affichage des configurations machines. Structurer avec JSON pour l'interpretation des parametres du JSON machine et leurs valeurs.
 - Creer un HTML pour la generation des gammes avec vue des trajectoires en 3D, etc...
 - Voir pour modifier encore le gestion des transition en construisant les etats machine complets (etat courant et last)??
 ### Points a verifier (dans app):
@@ -24,9 +25,11 @@
 - Pour les machines ayant un peigne monobloc en broche principale (type B075), il faut programmer dans CATIA tous les outils du meme cote (repere canal 1). L'inversion des coordonnees X se fait par le PP.
 - Un degagement d'outil en X est ecrit en dur avant les changements d'outil (T0 G0 X...) sans prise en compte de l'axe C courant (le degagement en X sera le meme si C=0 ou C=45). La valeur du X est donne par le hometool X.
 - Les outils positionnes avec un vecteur K[0, 1, 0] ne sont pas pris en compte.
-- ROTABL utilisable en axe C et avec des outils de type MILL frontaux uniquement. Si un autre axe ou un autre type d'outil sont selectionnes, emission d'un message d'erreur.
-- Listofspindles du json machine doit refleter les différentes broches definies dans CATIA.
-- Dans CATIA pour BW128, 4 broches avec 4 reperes differents doivent-être crees. Les 3 premiers s'explique simplement (repere representatifs des canaux) mais le 4ème à pour but de pouvoir utiliser les T43 a T47 ou T41 et T42 (canal 3 pour usiner sur COP). Pas d'autres possiblités dans CATIA pour ce point.
+- ROTABL:
+    - Utilisable en axe C et avec des outils de type MILL frontaux uniquement. Si un autre axe ou un autre type d'outil sont selectionnes, emission d'un message d'erreur.
+    - Angle donne relatif avec sens a indiquer egalement dans CATIA.
+- Listofspindles du json machine doit refleter les differentes broches definies dans CATIA.
+- Dans CATIA pour BW128, 4 broches avec 4 reperes differents doivent-etre crees. Les 3 premiers s'explique simplement (repere representatifs des canaux) mais le 4ème a pour but de pouvoir utiliser les T43 a T47 ou T41 et T42 (canal 3 pour usiner sur COP). Pas d'autres possiblites dans CATIA pour ce point.
 
 ## Partie analyse:
 ### Prochaines actions:

@@ -223,6 +223,20 @@ def update_channel_combo(selected_machine, channel_combo, selected_channel):
     selected_channel.set(updated_channels[0] if updated_channels else "")
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def open_machine_image_for(machine_name):
     """ Ouvre l'image de la machine selectionnee dans le visualiseur d'images par defaut du systeme """
     machine_config: JsonDict = MachinesConfigLoader.get_machine(machine_name)
@@ -257,6 +271,21 @@ def generate_machine_html_for(machine_name, output_folder):
     html_path = write_machine_html(output_folder, machine_name, machine_config)
     os.startfile(html_path)
     messagebox.showinfo("HTML machine genere", f"Fiche machine generee :\n{html_path}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def nombre_decimal_negatif_valide(nouveau_texte):
@@ -491,12 +520,12 @@ def main():
     tb.Label(main_frame, text="Visualiser la config machine :", 
              font=("Segoe UI", 16)).grid(column=2, row=13, sticky="w", padx=5, pady=5)
 
-    visualize_button_for_analyzer = tb.Button(main_frame, text="Visualiser", bootstyle="primary", 
-                                 command=lambda: run_ui_action(
-                                     "Erreur image machine",
-                                     lambda: open_machine_image_for(selected_machine_for_analyzer.get()),
-                                 ))
-    visualize_button_for_analyzer.grid(column=2, row=14, sticky="w", padx=5, pady=5)
+    # visualize_button_for_analyzer = tb.Button(main_frame, text="Visualiser", bootstyle="primary", 
+    #                              command=lambda: run_ui_action(
+    #                                  "Erreur image machine",
+    #                                  lambda: open_machine_image_for(selected_machine_for_analyzer.get()),
+    #                              ))
+    # visualize_button_for_analyzer.grid(column=2, row=14, sticky="w", padx=5, pady=5)
 
     generate_machine_html_button = tb.Button(main_frame, text="Generer HTML", bootstyle="primary",
                                  command=lambda: run_ui_action(
@@ -506,11 +535,11 @@ def main():
                                          Path(label_output_folder_for_analyzer.cget("text")) / get_datetime_string(),
                                      ),
                                  ))
-    generate_machine_html_button.grid(column=2, row=15, sticky="w", padx=5, pady=5)
+    generate_machine_html_button.grid(column=2, row=14, sticky="w", padx=5, pady=5)
 
     # Section decalage piece
     tb.Label(main_frame, text="Epaisseur piece (pour dec COP) :", 
-             font=("Segoe UI", 16)).grid(column=2, row=16, sticky="w", padx=5, pady=5)
+             font=("Segoe UI", 16)).grid(column=2, row=15, sticky="w", padx=5, pady=5)
     
     # Validation de l'entree pour n'autoriser que les nombres decimaux negatifs et les etats intermediaires
     vcmd = (form.register(nombre_decimal_negatif_valide), "%P")
@@ -523,10 +552,10 @@ def main():
         validate="key",
         validatecommand=vcmd
     )
-    part_thickness.grid(column=2, row=17, sticky="w", padx=5, pady=5)
+    part_thickness.grid(column=2, row=16, sticky="w", padx=5, pady=5)
 
     # Section Visualiser les trajectoires
-    tb.Label(main_frame, text="Visualiser les trajectoires :", font=("Segoe UI", 16)).grid(column=2, row=19, sticky="w", padx=5, pady=5)
+    tb.Label(main_frame, text="Visualiser les trajectoires :", font=("Segoe UI", 16)).grid(column=2, row=18, sticky="w", padx=5, pady=5)
     visualize_button_for_analyzer = tb.Button(main_frame, text="Start", bootstyle="success", command=lambda: run_ui_action(
         "Erreur simulation",
         lambda: viewer_launch(
@@ -537,7 +566,7 @@ def main():
             part_thickness_var.get(),
         ),
     ))
-    visualize_button_for_analyzer.grid(column=2, row=20, sticky="w", padx=5, pady=5)
+    visualize_button_for_analyzer.grid(column=2, row=19, sticky="w", padx=5, pady=5)
     visualize_button_for_analyzer.config(state="disabled")  # Desactiver au debut
 
     update_calculate_button(

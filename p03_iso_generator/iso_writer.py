@@ -88,9 +88,11 @@ class IsoWriter:
                 "type outil absent avant changement outil/broche",
             ))
 
-        # Validation de la selection outil/broche pour s'assurer que le changement d'outil/broche est coherent avec le profil de fraisage/tournage.
+        # Validation de la selection outil/broche pour s'assurer que le changement
+        # d'outil/broche est coherent avec le profil de fraisage/tournage.
         selection = MachiningSelection(tool=tool, spindle=spindle)
-        # Le profil de fraisage/tournage determine a partir du type d'outil valide la selection outil/broche pour s'assurer que le changement d'outil/broche est coherent avec le profil de fraisage/tournage.
+        # Le profil de fraisage/tournage determine a partir du type d'outil valide la selection
+        # outil/broche pour s'assurer que le changement d'outil/broche est coherent avec le profil de fraisage/tournage.
         get_machining_profile(tool.tool_type).validate(selection, self.machine)
 
         # Determination de la transition outil/broche a partir de l'etat courant declare et du nouvel etat a emettre.
@@ -100,11 +102,13 @@ class IsoWriter:
             spindle,
             tool_change_processing,
         )
-        # Validation de la transition pour s'assurer que les changements d'outil/broche sont coherents avec l'etat courant declare et le profil de fraisage/tournage.
+        # Validation de la transition pour s'assurer que les changements
+        # d'outil/broche sont coherents avec l'etat courant declare et le profil de fraisage/tournage.
         transition.validate()
         # Determination des lignes a emettre pour la transition outil/broche et emission de ces lignes.
         result = ToolUpdateResult()
-        # Indicateur pour savoir si une rotation a deja ete emise par les codes de transition pour eviter les emissions redondantes de rotation.
+        # Indicateur pour savoir si une rotation a deja ete emise par les codes de
+        # transition pour eviter les emissions redondantes de rotation.
         rotation_emitted = False
 
         # Si un changement d'outil doit etre traite, on emet les lignes de changement outil et de transition associees.
@@ -125,7 +129,8 @@ class IsoWriter:
 
         # Memorisation du nouvel etat outil/broche apres emission.
         self._store_tool_update(tool, spindle)
-        # Retour des positions logiques forcees par l'emission de changement outil/broche pour que le post-processeur puisse les prendre en compte dans son etat courant declare.
+        # Retour des positions logiques forcees par l'emission de changement outil/broche
+        # pour que le post-processeur puisse les prendre en compte dans son etat courant declare.
         return result
 
 
@@ -393,7 +398,11 @@ class IsoWriter:
 
 
     # TODO: a finaliser apres verification des mouvements en axe C.
-    def caxis_move(self, tool_number: int, spindle_number: Optional[int], rotation_speed: float, rotation_unit: RotationUnit,
-                   rotation_direction: RotationDirection, position_c: float) -> None:
-        """Gere les mouvements en axe C en emettant le code de rotation de broche approprie et la position C."""
-        
+    def rotabl(self, tool: ToolSelection, spindle: SpindleSelection, position_c: float) -> None:
+        """Gere les rotations en axe C en fonction du type d'outil et de broche courant."""
+        self._emit_rotation_for_mill(tool, spindle)
+        self.emit(self.machine.get_code_for_spindle_c_axis(spindle.number, True))
+        self.emit(self.machine.get_code_for_spindle_brake(spindle.number, False))
+        self.emit(f"{self.machine.rapid_move_code} C{format_float_to_iso(position_c)}")
+        self.emission_state.last_c_position = position_c
+        self.emit(self.machine.get_code_for_spindle_brake(spindle.number, True))
