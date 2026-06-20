@@ -2,7 +2,7 @@
   "machineslist": {
     "TSUGAMI_BW128_test": {
       "calculationtolerance": 0.001,
-      "imgkinematic": "img\\TSUGAMI_BW128.jpg",
+      "imgkinematic": "p01_machines_config\\ressources\\TSUGAMI_BW128.jpg",
       "machineinformations": {
         "rapidfeedrate": 25000,
         "changetooltime": 1,

@@ -22,7 +22,7 @@ def _format_value(value: Any) -> str:
 
 def _resource_uri(resource_name: str) -> str:
     """Retourne une URI file:// vers les ressources HTML locales."""
-    resource_path = Path(__file__).resolve().parents[1] / "dev_resources" / "html" / "Ressources" / resource_name
+    resource_path = Path(__file__).resolve().parents[1] / "p01_machines_config" / "ressources" / resource_name
     return resource_path.as_uri()
 
 
