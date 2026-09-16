@@ -18,6 +18,7 @@
         "feedrateprefix": "F",
         "blockprefix": "N",
         "blockincrement": 10,
+        "absolutepositioning": "G90",
         "partcounter": "M97",
         "feedrateperminute": "G98",
         "feedrateperrevolution": "G99",
@@ -28,7 +29,18 @@
         "coolantstop": "M9",
         "endprogram": "M30",
         "startandendfilecharacter": "%",
-        "ipartvector": [1, 0, 0]
+        "ipartvector": [1, 0, 0],
+        "barfeedertorqueoff": "M60",
+        "barfeedertorqueon": "M61",
+        "mainspindlechuckclamp": "M10",
+        "mainspindlechuckunclamp": "M11",
+        "channelstartprefix": "M",
+        "channelwaitingmin": "M500",
+        "channelwaitingmax": "M699",
+        "channelwaitingnc1nc2": "P3",
+        "channelwaitingnc1nc3": "P5",
+        "channelwaitingnc2nc3": "P6",
+        "channelwaitingnc1nc2nc3": "P7"
       },
       "listofspindles": {
         "1": {

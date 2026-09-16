@@ -323,11 +323,12 @@ class WriterState:
     indirv_z: Optional[float] = None
     # Other
     motion_mode: MotionMode = MotionMode.RAPID
-    toolComp_mode: ToolComp = ToolComp.OFF
+    tool_comp_mode: ToolComp = ToolComp.OFF
     channel_identifier: Optional[int] = None
     bloc_number: int = 0
     line_number: int = 0
     tool_change_processing: bool = False
+    channel_waiting_number: int = 0
 
 
 @dataclass
@@ -345,5 +346,5 @@ class EmissionState:
     last_selection: Optional[MachiningSelection] = None
     # Other
     last_work_plane_code: Optional[str] = None
-    last_toolComp_mode: ToolComp = ToolComp.OFF
+    last_toolcomp_mode: ToolComp = ToolComp.OFF
     

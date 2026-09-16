@@ -126,22 +126,36 @@ class MachineParameters:
     spindle_speed_prefix: str
     program_prefix: str
     feedrate_prefix: str
+    block_prefix: str
+    block_increment: int
+    absolute_positioning_code: str
+    partcounter_code: str
     feedrate_per_minute: str
     feedrate_per_revolution: str
+    xy_work_plane_code: str
+    xz_work_plane_code: str
+    yz_work_plane_code: str
     coolant_start_code: str | None
     coolant_stop_code: str | None
     endprogram_code: str
     startandendfile_character: str
-    block_prefix: str
-    block_increment: int
-    partcounter_code: str
-    xy_work_plane_code: str
-    xz_work_plane_code: str
-    yz_work_plane_code: str
+    ipartvector: list[float] | None
+    bar_feeder_torque_off: str | None
+    bar_feeder_torque_on: str | None
+    main_spindle_chuck_clamp: str | None
+    main_spindle_chuck_unclamp: str | None
+    channel_start_prefix: str | None
+    channel_waiting_min: str | None
+    channel_waiting_max: str | None
+    channel_waiting_nc1_nc2: str | None
+    channel_waiting_nc1_nc3: str | None
+    channel_waiting_nc2_nc3: str | None
+    channel_waiting_nc1_nc2_nc3: str | None
     channel_tool_change_point_x_for_t0: float
+    channels_list: JsonDict
     channel_tools: JsonDict
     machine_spindles: JsonDict
-    ipartvector: list[float] | None
+
 
     def get_required_spindle_config(self, spindle_number: int) -> JsonDict:
         """Retourne la configuration JSON de la broche ou leve une erreur."""
@@ -350,10 +364,7 @@ class MachineParameters:
             channel_config: JsonDict = channels_list[channel_name]  # type: ignore[index]
             channel_tool_change_point_x_for_t0 = _extract_tool_change_point_x_for_t0(
                 channel_config["toolchangepointxforT0"]
-            )
-
-            coolant_start_code = machine_informations.get("coolantstart")
-            coolant_stop_code = machine_informations.get("coolantstop")
+                )
 
             return machine_parameters_builder(
                 channel_name=channel_name,
@@ -370,22 +381,35 @@ class MachineParameters:
                 spindle_speed_prefix=machine_informations["spindlespeedprefix"],
                 program_prefix=machine_informations["programprefix"],
                 feedrate_prefix=machine_informations["feedrateprefix"],
-                feedrate_per_minute=normalize_gm_code(machine_informations["feedrateperminute"]),
-                feedrate_per_revolution=normalize_gm_code(machine_informations["feedrateperrevolution"]),
-                coolant_start_code=normalize_gm_code(coolant_start_code),
-                coolant_stop_code=normalize_gm_code(coolant_stop_code),
-                endprogram_code=normalize_gm_code(machine_informations["endprogram"]),
-                startandendfile_character=machine_informations["startandendfilecharacter"],
                 block_prefix=machine_informations["blockprefix"],
                 block_increment=machine_informations["blockincrement"],
+                absolute_positioning_code=normalize_gm_code(machine_informations["absolutepositioning"]),
                 partcounter_code=normalize_gm_code(machine_informations["partcounter"]),
+                feedrate_per_minute=normalize_gm_code(machine_informations["feedrateperminute"]),
+                feedrate_per_revolution=normalize_gm_code(machine_informations["feedrateperrevolution"]),
                 xy_work_plane_code=normalize_gm_code(machine_informations["xyworkplane"]),
                 xz_work_plane_code=normalize_gm_code(machine_informations["xzworkplane"]),
                 yz_work_plane_code=normalize_gm_code(machine_informations["yzworkplane"]),
+                coolant_start_code=normalize_gm_code(machine_informations["coolantstart"]),
+                coolant_stop_code=normalize_gm_code(machine_informations["coolantstop"]),
+                endprogram_code=normalize_gm_code(machine_informations["endprogram"]),
+                startandendfile_character=machine_informations["startandendfilecharacter"],
+                ipartvector=machine_informations.get("ipartvector"),
+                bar_feeder_torque_off=normalize_gm_code(machine_informations.get("barfeedertorqueoff")),
+                bar_feeder_torque_on=normalize_gm_code(machine_informations.get("barfeedertorqueon")),
+                main_spindle_chuck_clamp=normalize_gm_code(machine_informations.get("mainspindlechuckclamp")),
+                main_spindle_chuck_unclamp=normalize_gm_code(machine_informations.get("mainspindlechuckunclamp")),
+                channel_start_prefix=normalize_gm_code(machine_informations.get("channelstartprefix")),
+                channel_waiting_min=normalize_gm_code(machine_informations.get("channelwaitingmin")),
+                channel_waiting_max=normalize_gm_code(machine_informations.get("channelwaitingmax")),
+                channel_waiting_nc1_nc2=normalize_gm_code(machine_informations.get("channelwaitingnc1nc2")),
+                channel_waiting_nc1_nc3=normalize_gm_code(machine_informations.get("channelwaitingnc1nc3")),
+                channel_waiting_nc2_nc3=normalize_gm_code(machine_informations.get("channelwaitingnc2nc3")),
+                channel_waiting_nc1_nc2_nc3=normalize_gm_code(machine_informations.get("channelwaitingnc1nc2nc3")),
                 channel_tool_change_point_x_for_t0=channel_tool_change_point_x_for_t0,
+                channels_list=channels_list,
                 channel_tools=channel_config["listoftools"],
                 machine_spindles=spindles_list,
-                ipartvector=machine_informations.get("ipartvector"),
             )
         except KeyError:
             raise ValueError(error_message(

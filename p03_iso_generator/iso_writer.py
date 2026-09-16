@@ -46,30 +46,72 @@ class IsoWriter:
 
 
     def header(self) -> None:
-        """Ajoute l'en-tete minimal pour un programme de fraisage en coordonnees absolues."""
+        """Ajoute l'en-tete minimal pour un programme."""
         self.emit(f"{self.machine.startandendfile_character}")
         self.emit(f"{self.machine.program_prefix}{self.machine.channel_name}000")
 
 
     def footer(self, tool_number: int, position_x: float, spindle_number: Optional[int] = None) -> None:
-        """Ajoute le pied de page minimal pour un programme de fraisage."""
-        self.emit(self.machine.get_spindle_code(tool_number, spindle_number))
-        self.emit(self.machine.get_code_for_spindle_brake(spindle_number, False))
-        self.emit(self.machine.get_code_for_spindle_c_axis(spindle_number, False))
+        """Ajoute le pied de page minimal pour un programme."""
+        self.emit(f"\n{self.machine.get_spindle_code(tool_number, spindle_number)}")
+        self.emit(f"{self.machine.get_code_for_spindle_brake(spindle_number, False)}")
+        self.emit(f"{self.machine.get_code_for_spindle_c_axis(spindle_number, False)}")
         self._emit_tool_clearance(position_x)
-        self.emit(f"{self.machine.partcounter_code}") if self.machine.channel_name == "1" else None
+        if self.machine.channel_name == "1":
+            self.emit(f"{self.machine.partcounter_code}")
+            self.emit(f"{self.machine.main_spindle_chuck_clamp}")
         self.emit(f"{self.machine.endprogram_code}")
         self.emit(f"{self.machine.startandendfile_character}")
 
 
+
+
+
+
+
+
+
+
+
+
     def op_name(self, bloc_number: int, op_name: str) -> None:
         """Ajoute un commentaire d'operation avec le numero de bloc."""
-        self.emit(f"{self.machine.block_prefix}{bloc_number} ({op_name})")
+        # Si le bloc est 20, on emet un commentaire de debut de programme et on emet les lignes de demarrage du canal.
+        if bloc_number == 20:
+            self.emit(f"\n{self.machine.block_prefix}{bloc_number - 10} (START PROGRAM)")
+            # Emission des lignes de demarrage propres au canal 1.
+            if self.machine.channel_name == "1":
+                self.emit(f"{self.machine.bar_feeder_torque_on} (FEEDER TORQUE ON)")
+                # Lancement des canaux.
+                for channel in self.machine.channels_list:
+                    if channel != self.machine.channel_name:
+                        self.emit(f"M{channel}{channel}000 (START CHANNEL {channel})")
+                        self.emit(f"{self.machine.main_spindle_chuck_unclamp} (MAIN SPINDLE CHUCK UNCLAMP)")
+            # Emission des lignes de demarrage pour les autres canaux.
+            else:
+                self.emit(f"{self.machine.rapid_move_code} (RAPID MOVE)")
+                # self.emit(f"{self.machine.tool} (RAPID MOVE)")
+                # self.emit(f"{self.machine.rapid_move_code} (RAPID MOVE)")
+                # self.emit(f"{self.machine.rapid_move_code} (RAPID MOVE)")
+                # self.emit(f"{self.machine.rapid_move_code} (RAPID MOVE)")
+        # Construction op_name standard.
+        self.emit(f"\n{self.machine.block_prefix}{bloc_number} ({op_name})")
+
+
+
+
+
+
+
+
+
+
+
 
 
     def channel(self, channel_number: int) -> None:
         """Ajoute un commentaire de canal."""
-        self.emit(f"(CANAL {channel_number})")
+        self.emit(f"\n(CANAL {channel_number})")
 
     # TODO: rotation_unit non utilisee. A implementer??
     def apply_tool_update(self, work_plane: str, tool: ToolSelection, spindle: SpindleSelection,
@@ -186,12 +228,12 @@ class IsoWriter:
             return True
 
         # Activation outil tournant de fraisage apres premier outil MILL, sortie du tournage ou changement d'outil de fraisage.
-        if transition_kind in (TransitionKind.FIRST_MILL, TransitionKind.TURN_TO_MILL, TransitionKind.MILL_TO_MILL):
+        if transition_kind in (TransitionKind.FIRST_MILL, TransitionKind.TURN_TO_MILL):
             self._emit_mill_activation(tool, spindle)
             return True
 
         # En TURN -> TURN, seule la broche ou la rotation peut necessiter une emission.
-        if transition_kind == TransitionKind.TURN_TO_TURN:
+        if transition_kind == (TransitionKind.TURN_TO_TURN, TransitionKind.MILL_TO_MILL):
             if transition.is_spindle_change:
                 self.emit(self.machine.get_code_for_spindle_c_axis(spindle.number, False))
                 self._emit_rotation(tool, spindle)
@@ -203,31 +245,58 @@ class IsoWriter:
         return False
 
 
-    # TODO: gestion de l'axe C a reprendre car repassage par C0 dans tous les cas pas  forcement juste.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # TODO: gestion de l'axe C a reprendre car repassage par C0 dans tous les cas pas forcement juste.
 
     def _emit_turn_activation(self, spindle: SpindleSelection) -> None:
         """Active une broche de tournage."""
-        self._emit_caxis_reset(spindle)
         self.emit(self.machine.get_code_for_spindle_brake(spindle.number, False))
         self.emit(self.machine.get_code_for_spindle_c_axis(spindle.number, False))
         self._emit_rotation_for_turn(spindle)
-        self.emission_state.last_y_position = 0.0
 
 
     def _emit_mill_activation(self, tool: ToolSelection, spindle: SpindleSelection) -> None:
         """Active un outil tournant de fraisage et initialise l'axe C."""
-        self._emit_rotation_for_mill(tool, spindle)
-        self._emit_caxis_reset(spindle)
-        
-    
-    def _emit_caxis_reset(self, spindle: SpindleSelection) -> None:
-        """Remet l'axe C a sa position de reference."""
         self.emit(self.machine.get_code_for_spindle_c_axis(spindle.number, True))
         self.emit(self.machine.get_code_for_spindle_brake(spindle.number, False))
         self.emit(self.machine.get_code_for_c_axis_reference_position(spindle.number))
-        self.emit(f"{self.machine.rapid_move_code} C{format_float_to_iso(0.0)}")
-        self.emission_state.last_c_position = 0.0
+        # self.emit(f"{self.machine.rapid_move_code} C{format_float_to_iso(0.0)}")
+        # self.emission_state.last_c_position = 0.0
         self.emit(self.machine.get_code_for_spindle_brake(spindle.number, True))
+        self._emit_rotation_for_mill(tool, spindle)
+        
+    
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def _emit_rotation(self, tool: ToolSelection, spindle: SpindleSelection) -> None:
@@ -276,24 +345,47 @@ class IsoWriter:
                     position_c=None) -> None:
         """Gere les mouvements lineaires en emettant le code de mouvement approprie et les coordonnees qui ont change."""
 
+
+
+
+
+
         # Si une position en axe C est fournie, on emet le code de mouvement en axe C avant les autres axes pour eviter les collisions.
         # TODO: positionnement en C force si en fraisage. Voir pour mettre plus d'inteligence la-dedans.
         if position_c is not None and self.machine.get_tool_type(tool_number) == ToolType.MILL:
             # Si une rotation en axe C est demandee, on emet le code de desactivation et reactivation du frein de broche.
             spindle_number = self._get_emitted_spindle_number()
             self.emit(self.machine.get_code_for_spindle_brake(spindle_number, False))
+
+
+
+            #self.emit(self.machine.get_code_for_c_axis_reference_position(spindle_number))
+
+
+
             self.emit(f"{self.machine.rapid_move_code} C{format_float_to_iso(position_c)}")
             self.emit(self.machine.get_code_for_spindle_brake(spindle_number, True))
             self.emission_state.last_c_position = position_c
+
+
+
+
+
+
+
+
+
+
+
 
         # Determination du code de mouvement lineaire ou rapide et construction de la ligne de mouvement avec les axes qui ont change.
         motion_code = self.machine.rapid_move_code if motion_mode == MotionMode.RAPID else self.machine.linear_move_code
         axis_words = [motion_code]
 
         # Si le mode de compensation d'outil a change, on l'ajoute a la ligne de mouvement.
-        if self.emission_state.last_toolComp_mode != cutcom_mode:
+        if self.emission_state.last_toolcomp_mode != cutcom_mode:
             axis_words.append(self.machine.get_tool_compensation_code_for_tool(tool_number, cutcom_mode))
-            self.emission_state.last_toolComp_mode = cutcom_mode
+            self.emission_state.last_toolcomp_mode = cutcom_mode
 
         # Si une coordonnee a change, on l'ajoute a la ligne de mouvement et on met a jour la position courante.
         if position_x is not None:
@@ -384,7 +476,7 @@ class IsoWriter:
 
 
 
-    # TODO: a finaliser apres verification des mouvements en axe C.
+    # TODO: ROTBL pas actif avec la licence MLG dans CATIA -> on laisse tomber ce point pour l'instant.
     def rotabl(self, tool: ToolSelection, spindle: SpindleSelection, position_c: float) -> None:
         """Gere les rotations en axe C en fonction du type d'outil et de broche courant."""
         self._emit_rotation_for_mill(tool, spindle)

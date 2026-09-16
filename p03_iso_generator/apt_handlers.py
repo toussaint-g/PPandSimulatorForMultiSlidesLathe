@@ -96,16 +96,8 @@ def _is_milling_tool(state: WriterState, iso_writer: IsoWriter) -> bool:
     return iso_writer.machine.get_tool_type(state.tool.number) == ToolType.MILL
 
 
-def _compute_c_axis_from_ijk(
-    apt_i: float,
-    apt_j: float,
-    apt_k: float,
-    tool_i: float,
-    tool_j: float,
-    path_i: float,
-    path_j: float,
-    tolerance: float,
-) -> float | None:
+def _compute_c_axis_from_ijk(apt_i: float, apt_j: float, apt_k: float, tool_i: float, tool_j: float,
+                             path_i: float, path_j: float, tolerance: float, ) -> float | None:
     """Calcule C depuis le vecteur APT, relativement au ispindlevector et ktoolvector courants."""
     apt_has_xy_component = abs(apt_i) > tolerance or abs(apt_j) > tolerance
     apt_has_z_component = abs(apt_k) > tolerance
@@ -152,8 +144,12 @@ def h_channel(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
 
 def h_op_name(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
     """Gere la commande OP_NAME en l'ecrivant comme un commentaire d'operation dans l'ISO, avec un numero de bloc unique."""
-    state.bloc_number +=  int(iso_writer.machine.block_increment)
-    iso_writer.op_name(state.bloc_number, argument_text)
+
+    if state.bloc_number == 0:
+        state.bloc_number += int(iso_writer.machine.block_increment) * 2
+    else:
+        state.bloc_number +=  int(iso_writer.machine.block_increment)
+    iso_writer.op_name(state.bloc_number, argument_text.upper())
 
 
 def h_tprint(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
@@ -336,7 +332,7 @@ def h_goto(apt_keyword: str, argument_text: str, state: WriterState, iso_writer:
 
     # N'emet la ligne de deplacement que si au moins un axe change.
     if x_out is not None or y_out is not None or z_out is not None or c_out is not None:
-        iso_writer.linear_move(state.tool.number, state.motion_mode, state.toolComp_mode, state.feedrate_value,
+        iso_writer.linear_move(state.tool.number, state.motion_mode, state.tool_comp_mode, state.feedrate_value,
                                state.feedrate_unit, position_x=x_out, position_y=y_out, position_z=z_out,
                                position_c=c_out)
 
@@ -345,7 +341,7 @@ def h_cutcom(apt_keyword: str, argument_text: str, state: WriterState, iso_write
     # Exemple accepte : CUTCOM/LEFT
     cutcom_tokens = csv_tokens(argument_text)
     cutcom_mode = ToolComp(cutcom_tokens[0])
-    state.toolComp_mode = cutcom_mode
+    state.tool_comp_mode = cutcom_mode
 
 
 def h_indirv(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
@@ -397,37 +393,28 @@ def h_helical(apt_keyword: str, argument_text: str, state: WriterState, iso_writ
 
 
 
-# TODO: a finaliser apres verification des mouvements en axe C.
-def h_rotabl(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
-    """Met a jour le mode de compensation d'outil et emet les lignes ISO correspondantes si necessaire."""
-    # Exemple accepte : ROTABL/180.000000,CLW,CAXIS
-    rotabl_tokens = csv_tokens(argument_text)
-    rotabl_amount = float(rotabl_tokens[0])
-    rotabl_direction = RotationDirection(rotabl_tokens[1])
-    rotabl_axis = AxisOfRotation(rotabl_tokens[2])
+# TODO: ROTBL pas utilisable dans CATIA avec machine multi-slide. Trouver une alternative??
+# def h_rotabl(apt_keyword: str, argument_text: str, state: WriterState, iso_writer: IsoWriter) -> None:
+#     """Met a jour le mode de compensation d'outil et emet les lignes ISO correspondantes si necessaire."""
+#     # Exemple accepte : ROTABL/180.000000,CLW,CAXIS
+#     rotabl_tokens = csv_tokens(argument_text)
+#     rotabl_amount = float(rotabl_tokens[0])
+#     rotabl_direction = RotationDirection(rotabl_tokens[1])
+#     rotabl_axis = AxisOfRotation(rotabl_tokens[2])
 
-    # Si CAXIS, on traite sinon, message d'erreur.
-    if rotabl_axis == AxisOfRotation.CAXIS and state.tool.tool_type == ToolType.MILL:
-        # On applique la rotation a l'axe C en fonction du sens de rotation et de l'angle de rotation.
-        if rotabl_direction == RotationDirection.CLW:
-            state.position_c += rotabl_amount
-        else:
-            state.position_c -= rotabl_amount
-        
+#     # Si CAXIS, on traite sinon, message d'erreur.
+#     if rotabl_axis == AxisOfRotation.CAXIS and state.tool.tool_type == ToolType.MILL:
+#         # On applique la rotation a l'axe C en fonction du sens de rotation et de l'angle de rotation.
+#         if rotabl_direction == RotationDirection.CLW:
+#             state.position_c += rotabl_amount
+#         else:
+#             state.position_c -= rotabl_amount
 
+#         iso_writer.rotabl(state.tool, state.spindle, state.position_c)
 
-
-
-
-        iso_writer.rotabl(state.tool, state.spindle, state.position_c)
-
-
-
-
-
-    else:
-        iso_writer.comment(unmanaged_diagnostic("ROTABL", reason=f"axe {rotabl_axis.value} non supporte"))
-        return
+#     else:
+#         iso_writer.comment(unmanaged_diagnostic("ROTABL", reason=f"axe {rotabl_axis.value} non supporte"))
+#         return
     
 
 
@@ -472,13 +459,11 @@ DISPATCH: dict[str, Handler] = {
     "INDIRV": h_indirv,
     "TLON": h_tlon,
     "HELICAL": h_helical,
-    # Rotation d'axes
-    "ROTABL": h_rotabl,
     # Compensation
     "CUTCOM": h_cutcom,
     # Meta-informations (commentees dans l'ISO)
     "PART_OPE": partial(h_comment, text_info="PHASE"),
-    "PROGRAM": partial(h_comment, text_info="PROGRAMME"),
+    "PROGRAM": partial(h_comment, text_info="PROGRAM"),
     "MACHINE": partial(h_comment, text_info="MACHINE"),
     "CATPROCESS": partial(h_comment, text_info="CATPROCESS"),
     "CATPRODUCT": partial(h_comment, text_info="CATPRODUCT"),
